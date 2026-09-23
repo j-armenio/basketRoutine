@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project state
 
-**Phase 0 (scaffolding) and Phase 1 (data layer) are done** (the on-phone check passed; only a green CI run on `main` is pending, see `docs/plan/phase-1.md`'s final checklist). The app is an Expo Router + TypeScript project, Android only, dark UI. `app/` holds routes (`_layout.tsx` runs migrations + seed behind the splash screen; `index.tsx` is a temporary DB-check screen until Phase 2); everything else lives in `src/`:
+**Phase 0 (scaffolding) and Phase 1 (data layer) are done** (final checklist in `docs/plan/phase-1.md` fully ticked: on-phone check passed, CI green on `main`). The app is an Expo Router + TypeScript project, Android only, dark UI. `app/` holds routes (`_layout.tsx` runs migrations + seed behind the splash screen; `index.tsx` is a temporary DB-check screen until Phase 2); everything else lives in `src/`:
 
 - `src/domain/` — pure TypeScript, no DB imports: enum lists (`types.ts`), validation returning `{ ok, reason }` (`validation.ts`), set FG% (`fg.ts`), exercise/session summaries (`summary.ts`), and `DomainError` (`errors.ts`).
 - `src/db/` — `schema.ts` (Drizzle), `migrations/` (generated, never hand-edited), `client.ts` (expo-sqlite, opens `basket-routine.db`), `useDatabaseSetup.ts` (migrate + seed), `seed/` (38 predefined exercises, upserted by `seedKey`), `repositories/` (plain functions taking a `Db` as first argument: exercises, routines, workouts, sessions; they throw `DomainError` on rule violations), `test-utils.ts` (`createTestDb()`: in-memory better-sqlite3 with the real migrations).
@@ -37,7 +37,7 @@ When planning or starting a new phase, write its `docs/plan/phase-N.md` before i
 ## Current status
 
 - Phase 0 done (pending: first completed `preview` APK build installed on the phone, and the keystore backup).
-- Phase 1 done (on-phone check passed; pending: CI green on `main`). Phase 2 not planned yet.
+- Phase 1 done (on-phone check passed, CI green). Phase 2 not planned yet.
 
 ## Tech stack
 

@@ -182,5 +182,5 @@ The tests are written alongside steps 2, 3, 5 and 6 (with `createTestDb()` from 
 - [x] Domain tests cover FG%, aggregate summaries and validation edge cases.
 - [x] Data layer tests run against the real migrations and cover soft delete, snapshots, the single in-progress session rule and validation on write.
 - [x] The CI migration-sync step is added (the same commands pass locally).
-- [ ] CI is green on `main`.
+- [x] CI is green on `main`.
 - [x] On the phone (Expo Go): the catalog shows 38 exercises, and test routines survive killing and reopening the app.
