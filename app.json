@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "Basket Routine",
+    "slug": "basket-routine",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "basketroutine",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#121212",
+    "platforms": ["android"],
+    "android": {
+      "package": "com.jarmenio.basketroutine",
+      "backgroundColor": "#121212",
+      "adaptiveIcon": {
+        "backgroundColor": "#121212",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#121212",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 76
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
