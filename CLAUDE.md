@@ -4,9 +4,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project state
 
-**No app code exists yet.** The repository currently contains only planning docs (`docs/plan/`) and Claude Code config (`.claude/`). Phase 0 (project scaffolding) has not been executed. There is no `package.json`, no build/lint/test tooling, and no source tree — do not assume any commands work until Phase 0 has actually run and this file has been updated to reflect it.
+**Phase 0 (project scaffolding) is done.** The app is a working Expo Router + TypeScript project, Android only, dark UI. `app/` holds routes (`_layout.tsx`, `index.tsx` — a placeholder screen so far); everything else lives in `src/` (currently just `src/theme/colors.ts`). No data layer yet — Phase 1 (SQLite + Drizzle, domain logic) hasn't started, so there's no `src/db` or `src/domain`.
 
-Once Phase 0 lands, the commands, structure and architecture described in `docs/plan/phase-0.md` (and each subsequent `docs/plan/phase-N.md`) become real. Read the plan docs below before writing code — they are the source of truth for what to build next and in what order.
+Commands that work now: `npm run lint`, `npm run format` / `format:check`, `npm run typecheck`, `npm test`, `npx expo start` (dev loop — scan the QR code with Expo Go). CI (`.github/workflows/ci.yml`) runs all of those plus `npx expo-doctor` on every push and PR. An EAS project is linked (`@jarmenio/basket-routine`, ID in `app.json`'s `extra.eas.projectId`).
+
+Pending from Phase 0 (see `docs/plan/phase-0.md` final checklist):
+
+- Finish an `eas build -p android --profile preview` (a first attempt was started and deliberately canceled, to resume later) and confirm the resulting APK installs and opens on the phone.
+- Back up the EAS-generated keystore outside the repo, once a build completes.
+
+Read `docs/plan/phase-0.md` for exactly what was done, and the plan docs below before writing code for the next phase — they are the source of truth for what to build next and in what order.
 
 ## What this app is
 
@@ -19,14 +26,14 @@ Basket Routine: an Android-only, personal-use app (sideloaded APK, no Play Store
 
 When planning or starting a new phase, write its `docs/plan/phase-N.md` before implementing, following the level of detail in `phase-0.md`.
 
-## Tech stack (planned)
+## Tech stack
 
 | Concern | Choice |
 |---|---|
 | Framework | Expo (React Native) + TypeScript, Android only |
 | Navigation | Expo Router (`app/` holds routes only; everything else lives in `src/`) |
-| Local DB | SQLite via `expo-sqlite` + Drizzle ORM (offline-first) |
-| Package manager | npm, lockfile committed, Node pinned via `.nvmrc` (Node 24) |
+| Local DB | SQLite via `expo-sqlite` + Drizzle ORM (offline-first) — **not built yet, Phase 1** |
+| Package manager | npm, lockfile committed, Node pinned via `.nvmrc` (Node 24); `.npmrc` sets `legacy-peer-deps=true` (expo-router's peer graph still lists `react-dom`/`react-native-web`, which this Android-only app doesn't install) |
 | Build/deploy | EAS Build, `preview` profile, APK for manual sideload — triggered manually via a `workflow_dispatch` GitHub Actions workflow, after CI passes |
 | CI | GitHub Actions: lint, format check, typecheck, unit tests, `expo-doctor` |
 

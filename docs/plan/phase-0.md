@@ -136,10 +136,12 @@ Nothing is installed without asking first. Tools used in this phase:
 
 ## Final checklist
 
-- [ ] `npx expo start` + QR code opens the app in Expo Go on the phone, in dark mode.
-- [ ] `npm run lint`, `npm run format:check`, `npm run typecheck`, `npm test` and `npx expo-doctor` pass locally.
-- [ ] CI is green on GitHub for the latest commit on `main`.
+- [x] `npx expo start` + QR code opens the app in Expo Go on the phone, in dark mode.
+- [x] `npm run lint`, `npm run format:check`, `npm run typecheck`, `npm test` and `npx expo-doctor` pass locally.
+- [x] CI is green on GitHub for the latest commit on `main`.
 - [ ] The "Build APK" workflow runs the checks, then queues a build on EAS, and the build finishes on the EAS dashboard.
 - [ ] The APK installs on the phone and opens the dark placeholder screen.
 - [ ] The workflow APK installs over the step 8 APK without uninstalling.
 - [ ] Keystore backup stored outside the repo.
+
+**Status:** everything above except the APK build/install/keystore-backup items is done (commits `687028a`, `ae17cfa`). The EAS project (`@jarmenio/basket-routine`) is created and linked in `app.json`. A first `eas build` was started and canceled deliberately, to be resumed later — no build has completed yet.
