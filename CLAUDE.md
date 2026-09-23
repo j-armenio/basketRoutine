@@ -4,9 +4,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project state
 
-**Phase 0 (project scaffolding) is done.** The app is a working Expo Router + TypeScript project, Android only, dark UI. `app/` holds routes (`_layout.tsx`, `index.tsx` — a placeholder screen so far); everything else lives in `src/` (currently just `src/theme/colors.ts`). No data layer yet — Phase 1 (SQLite + Drizzle, domain logic) hasn't started, so there's no `src/db` or `src/domain`.
+**Phase 0 (scaffolding) and Phase 1 (data layer) are done** (the on-phone check passed; only a green CI run on `main` is pending, see `docs/plan/phase-1.md`'s final checklist). The app is an Expo Router + TypeScript project, Android only, dark UI. `app/` holds routes (`_layout.tsx` runs migrations + seed behind the splash screen; `index.tsx` is a temporary DB-check screen until Phase 2); everything else lives in `src/`:
 
-Commands that work now: `npm run lint`, `npm run format` / `format:check`, `npm run typecheck`, `npm test`, `npx expo start` (dev loop — scan the QR code with Expo Go). CI (`.github/workflows/ci.yml`) runs all of those plus `npx expo-doctor` on every push and PR. An EAS project is linked (`@jarmenio/basket-routine`, ID in `app.json`'s `extra.eas.projectId`).
+- `src/domain/` — pure TypeScript, no DB imports: enum lists (`types.ts`), validation returning `{ ok, reason }` (`validation.ts`), set FG% (`fg.ts`), exercise/session summaries (`summary.ts`), and `DomainError` (`errors.ts`).
+- `src/db/` — `schema.ts` (Drizzle), `migrations/` (generated, never hand-edited), `client.ts` (expo-sqlite, opens `basket-routine.db`), `useDatabaseSetup.ts` (migrate + seed), `seed/` (38 predefined exercises, upserted by `seedKey`), `repositories/` (plain functions taking a `Db` as first argument: exercises, routines, workouts, sessions; they throw `DomainError` on rule violations), `test-utils.ts` (`createTestDb()`: in-memory better-sqlite3 with the real migrations).
+- `src/theme/colors.ts`.
+
+Commands: `npm run lint`, `npm run format` / `format:check`, `npm run typecheck`, `npm test`, `npm run db:generate` (after any change to `src/db/schema.ts`), `npx expo start` (dev loop — scan the QR code with Expo Go). CI (`.github/workflows/ci.yml`) runs lint, format check, typecheck, tests, a schema/migrations-in-sync check (`db:generate` must leave `src/db/migrations` unchanged) and `npx expo-doctor` on every push and PR. An EAS project is linked (`@jarmenio/basket-routine`, ID in `app.json`'s `extra.eas.projectId`).
+
+**Migration policy:** until an APK with a DB is installed on the phone, the initial migration may be deleted and regenerated freely (clear Expo Go's data afterwards). After that, migrations are append-only.
+
+Tests live next to the code (`*.test.ts`); DB tests use the `@jest-environment node` docblock. Repositories call `.sync()` on Drizzle relational queries and read inserted rows back with `.returning()`.
 
 Pending from Phase 0 (see `docs/plan/phase-0.md` final checklist):
 
@@ -22,9 +30,14 @@ Basket Routine: an Android-only, personal-use app (sideloaded APK, no Play Store
 ## Planning docs
 
 - `docs/plan/PLAN.md` — high-level plan: tech stack, domain model, main user flow, milestones (Phase 0–7), backlog, risks. Kept free of deep technical detail by design.
-- `docs/plan/phase-N.md` — one detailed plan per phase, written just before that phase starts (only `phase-0.md` exists so far). Contains the concrete decisions, steps, and a "done when" checklist for that phase.
+- `docs/plan/phase-N.md` — one detailed plan per phase, written just before that phase starts (`phase-0.md` and `phase-1.md` done). Contains the concrete decisions, steps, and a "done when" checklist for that phase.
 
 When planning or starting a new phase, write its `docs/plan/phase-N.md` before implementing, following the level of detail in `phase-0.md`.
+
+## Current status
+
+- Phase 0 done (pending: first completed `preview` APK build installed on the phone, and the keystore backup).
+- Phase 1 done (on-phone check passed; pending: CI green on `main`). Phase 2 not planned yet.
 
 ## Tech stack
 
@@ -32,7 +45,7 @@ When planning or starting a new phase, write its `docs/plan/phase-N.md` before i
 |---|---|
 | Framework | Expo (React Native) + TypeScript, Android only |
 | Navigation | Expo Router (`app/` holds routes only; everything else lives in `src/`) |
-| Local DB | SQLite via `expo-sqlite` + Drizzle ORM (offline-first) — **not built yet, Phase 1** |
+| Local DB | SQLite via `expo-sqlite` + Drizzle ORM 0.45 (offline-first); `better-sqlite3` for tests only |
 | Package manager | npm, lockfile committed, Node pinned via `.nvmrc` (Node 24); `.npmrc` sets `legacy-peer-deps=true` (expo-router's peer graph still lists `react-dom`/`react-native-web`, which this Android-only app doesn't install) |
 | Build/deploy | EAS Build, `preview` profile, APK for manual sideload — triggered manually via a `workflow_dispatch` GitHub Actions workflow, after CI passes |
 | CI | GitHub Actions: lint, format check, typecheck, unit tests, `expo-doctor` |

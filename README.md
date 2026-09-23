@@ -20,13 +20,14 @@ Scan the QR code with the **Expo Go** app on your Android phone (same Wi-Fi netw
 
 ## Commands
 
-| Command                | What it does                     |
-| ---------------------- | -------------------------------- |
-| `npm run lint`         | ESLint                           |
-| `npm run format`       | Format the project with Prettier |
-| `npm run format:check` | Check formatting without writing |
-| `npm run typecheck`    | TypeScript, no emit              |
-| `npm test`             | Run the test suite               |
+| Command                | What it does                                     |
+| ---------------------- | ------------------------------------------------ |
+| `npm run lint`         | ESLint                                           |
+| `npm run format`       | Format the project with Prettier                 |
+| `npm run format:check` | Check formatting without writing                 |
+| `npm run typecheck`    | TypeScript, no emit                              |
+| `npm test`             | Run the test suite                               |
+| `npm run db:generate`  | Generate a SQL migration from `src/db/schema.ts` |
 
 ## Building an APK
 

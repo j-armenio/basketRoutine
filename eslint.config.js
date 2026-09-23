@@ -7,6 +7,6 @@ module.exports = defineConfig([
   expoConfig,
   eslintConfigPrettier,
   {
-    ignores: ['dist/*'],
+    ignores: ['dist/*', 'src/db/migrations/*'],
   },
 ]);

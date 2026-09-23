@@ -27,4 +27,13 @@ jobs:
 
       - run: npm test -- --ci
 
+      - name: Check schema and migrations are in sync
+        run: |
+          npm run db:generate
+          if [ -n "$(git status --porcelain src/db/migrations)" ]; then
+            echo "src/db/schema.ts changed without a matching migration. Run 'npm run db:generate' and commit the result."
+            git status --porcelain src/db/migrations
+            exit 1
+          fi
+
       - run: npx expo-doctor
