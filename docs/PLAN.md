@@ -119,7 +119,7 @@ Note: Drizzle migrations in Expo need extra bundler setup (`.sql` imports via Me
 
 ## 6. Risks & Mitigations
 - **Data loss on the court** → SQLite as single source of truth, persist every input immediately; resume interrupted sessions.
-- **Data lost on uninstall** (no manual backup in v1) → accepted trade-off; decide explicitly on Android Auto Backup (`allowBackup`), which may include the DB by default.
+- **Data lost on uninstall** (no manual backup in v1) → accepted trade-off. Android Auto Backup stays at its default (enabled) as a best-effort safety net; no configuration, testing or development work is spent on it.
 - **Media links break / no internet in the gym** → media optional; text description as fallback.
 - **Drizzle migrations bundling in Expo** → validate setup at the start of Phase 1.
 - **Numeric table + keyboard UX** → spike at the start of Phase 5, not left for polish.
