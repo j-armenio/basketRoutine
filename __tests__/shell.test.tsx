@@ -5,8 +5,10 @@ import { renderRouter } from 'expo-router/testing-library';
 // expo-sqlite can't run in Jest, so the app's DB is swapped for a real one
 // (better-sqlite3 in memory, with the real migrations) and seeded like at startup.
 jest.mock('@/db/client', () => {
+  /* eslint-disable @typescript-eslint/no-require-imports */
   const { createTestDb } = require('@/db/test-utils');
   const { seedExercises } = require('@/db/seed/seed');
+  /* eslint-enable @typescript-eslint/no-require-imports */
   const db = createTestDb();
   seedExercises(db);
   return { db };
@@ -33,6 +35,9 @@ test('starts on Workout and switches between the three tabs', async () => {
 
   expect(app.getPathname()).toBe('/');
   expect(screen.getByText('Quick Start')).toBeOnTheScreen();
+  const start = screen.getByRole('button', { name: 'Start Empty Workout' });
+  expect(start).toBeEnabled();
+  expect(screen.queryByText('Workout in progress')).toBeNull();
 
   await user.press(screen.getByRole('tab', { name: 'Exercises' }));
   expect(app.getPathname()).toBe('/exercises');

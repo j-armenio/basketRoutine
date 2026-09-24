@@ -15,7 +15,7 @@ problemas antes que a implementação comece.
 ## Critérios de revisão
 1. **Clareza do objetivo**: o problema e o resultado esperado estão bem definidos?
 2. **Escopo**: há itens fora de escopo ou escopo grande demais para uma entrega?
-3. **Divisão de tarefas**: as etapas são pequenas, ordenadas e verificáveis?
+3. **Divisão de tarefas**: as etapas são pequenas, ordenadas e averificáveis?
 4. **Dependências**: há dependências entre tarefas ou sistemas não mencionadas?
 5. **Riscos**: quais são os riscos técnicos e como mitigá-los?
 6. **Testes**: existe estratégia de testes e critérios de aceite?

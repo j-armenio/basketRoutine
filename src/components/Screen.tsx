@@ -1,22 +1,53 @@
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import type { ReactNode } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppText } from './AppText';
 
 type ScreenProps = {
   title: string;
   subtitle?: string;
+  /** Before the title (a minimize or close button). */
+  left?: ReactNode;
   right?: ReactNode;
   scroll?: boolean;
+  /** Pads the bottom safe area, for screens outside the tabs (which have a tab bar for that). */
+  bottomInset?: boolean;
+  /**
+   * Lifts the content above the keyboard. The app is edge-to-edge, so Android's own resize can't
+   * be relied on. The wrapper goes around the scroll view: inside it, it would do nothing.
+   */
+  keyboardAvoiding?: boolean;
   children: ReactNode;
 };
 
-export function Screen({ title, subtitle, right, scroll = true, children }: ScreenProps) {
+export function Screen({
+  title,
+  subtitle,
+  left,
+  right,
+  scroll = true,
+  bottomInset = false,
+  keyboardAvoiding = false,
+  children,
+}: ScreenProps) {
+  const body = scroll ? (
+    <ScrollView
+      testID="screen-scroll"
+      keyboardShouldPersistTaps="handled"
+      contentContainerStyle={styles.scrollContent}
+    >
+      {children}
+    </ScrollView>
+  ) : (
+    <View style={styles.content}>{children}</View>
+  );
+
   return (
-    <SafeAreaView edges={['top']} style={styles.safeArea}>
+    <SafeAreaView edges={bottomInset ? ['top', 'bottom'] : ['top']} style={styles.safeArea}>
       <View style={styles.header}>
+        {left}
         <View style={styles.titles}>
           <AppText variant="title" accessibilityRole="header">
             {title}
@@ -25,10 +56,16 @@ export function Screen({ title, subtitle, right, scroll = true, children }: Scre
         </View>
         {right}
       </View>
-      {scroll ? (
-        <ScrollView contentContainerStyle={styles.scrollContent}>{children}</ScrollView>
+      {keyboardAvoiding ? (
+        <KeyboardAvoidingView
+          testID="screen-keyboard-avoiding"
+          behavior="padding"
+          style={styles.flex}
+        >
+          {body}
+        </KeyboardAvoidingView>
       ) : (
-        <View style={styles.content}>{children}</View>
+        body
       )}
     </SafeAreaView>
   );
@@ -39,10 +76,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  flex: {
+    flex: 1,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: spacing.sm,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },

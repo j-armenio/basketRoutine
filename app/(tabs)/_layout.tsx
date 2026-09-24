@@ -2,7 +2,8 @@ import { Icon } from '@/components/Icon';
 import { colors } from '@/theme/colors';
 import { spacing, touch } from '@/theme/spacing';
 import { typography } from '@/theme/typography';
-import { Tabs } from 'expo-router';
+import { ResumeBanner } from '@/features/workout/ResumeBanner';
+import { BottomTabBar, Tabs } from 'expo-router/js-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabsLayout() {
@@ -10,6 +11,14 @@ export default function TabsLayout() {
 
   return (
     <Tabs
+      // The banner sits above the bar and stays up while the keyboard is open:
+      // `tabBarHideOnKeyboard` only hides the BottomTabBar.
+      tabBar={(props) => (
+        <>
+          <ResumeBanner />
+          <BottomTabBar {...props} />
+        </>
+      )}
       screenOptions={{
         headerShown: false,
         tabBarHideOnKeyboard: true,

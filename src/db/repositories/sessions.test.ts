@@ -187,23 +187,80 @@ describe('editing sessions', () => {
     expect(reasonOf(() => addSessionExercise(db, session.id, custom.id))).toBe('exercise_archived');
   });
 
+  test('adding an exercise creates its first set with the default for its mode', () => {
+    const { db } = setup();
+    const session = startEmptySession(db, 'S');
+    addSessionExercise(db, session.id, exerciseId(db, 'free_throws'), 'attempts');
+    addSessionExercise(db, session.id, exerciseId(db, 'mikan_drill'), 'makes');
+    addSessionExercise(db, session.id, exerciseId(db, 'figure_8'));
+
+    const exercises = detailOf(db, session.id).exercises;
+    expect(exercises.map((e) => e.sets)).toEqual([
+      [expect.objectContaining({ position: 0, targetValue: 10, loggedValue: null })],
+      [expect.objectContaining({ position: 0, targetValue: 5, loggedValue: null })],
+      [expect.objectContaining({ position: 0, targetValue: null, completed: false })],
+    ]);
+  });
+
+  test('a rejected addSessionExercise leaves no exercise or set behind', () => {
+    const { db } = setup();
+    const session = startEmptySession(db, 'S');
+    expect(reasonOf(() => addSessionExercise(db, session.id, exerciseId(db, 'free_throws')))).toBe(
+      'target_mode_required',
+    );
+    expect(db.select({ n: count() }).from(sessionExercises).get()!.n).toBe(0);
+    expect(db.select({ n: count() }).from(sessionSets).get()!.n).toBe(0);
+  });
+
   test('sets: addSessionSet defaults to the last target, delete works', () => {
     const { db } = setup();
     const session = startEmptySession(db, 'S');
     const shooting = addSessionExercise(db, session.id, exerciseId(db, 'free_throws'), 'attempts');
     const check = addSessionExercise(db, session.id, exerciseId(db, 'figure_8'));
+    const [first] = detailOf(db, session.id).exercises[0].sets;
 
-    expect(reasonOf(() => addSessionSet(db, shooting.id))).toBe('invalid_target_value');
-    const first = addSessionSet(db, shooting.id, 10);
     const second = addSessionSet(db, shooting.id);
     expect(second).toMatchObject({ targetValue: 10, position: 1 });
+    expect(addSessionSet(db, shooting.id, 12)).toMatchObject({ targetValue: 12, position: 2 });
+    expect(addSessionSet(db, shooting.id)).toMatchObject({ targetValue: 12, position: 3 });
     expect(reasonOf(() => addSessionSet(db, shooting.id, 0))).toBe('invalid_target_value');
 
-    expect(addSessionSet(db, check.id)).toMatchObject({ targetValue: null });
+    expect(addSessionSet(db, check.id)).toMatchObject({ targetValue: null, position: 1 });
     expect(reasonOf(() => addSessionSet(db, check.id, 5))).toBe('value_not_allowed');
 
     deleteSessionSet(db, first.id);
+    expect(detailOf(db, session.id).exercises[0].sets.map((s) => s.id)[0]).toBe(second.id);
+  });
+
+  test('the last set of an exercise cannot be deleted', () => {
+    const { db } = setup();
+    const session = startEmptySession(db, 'S');
+    addSessionExercise(db, session.id, exerciseId(db, 'free_throws'), 'attempts');
+    addSessionExercise(db, session.id, exerciseId(db, 'figure_8'));
+    const [shooting, check] = detailOf(db, session.id).exercises;
+
+    expect(reasonOf(() => deleteSessionSet(db, shooting.sets[0].id))).toBe('invalid_set_count');
+    expect(reasonOf(() => deleteSessionSet(db, check.sets[0].id))).toBe('invalid_set_count');
+    expect(detailOf(db, session.id).exercises.map((e) => e.sets.length)).toEqual([1, 1]);
+
+    const second = addSessionSet(db, shooting.id);
+    deleteSessionSet(db, shooting.sets[0].id);
     expect(detailOf(db, session.id).exercises[0].sets.map((s) => s.id)).toEqual([second.id]);
+    expect(reasonOf(() => deleteSessionSet(db, second.id))).toBe('invalid_set_count');
+  });
+
+  test('addSessionSet on an exercise with no sets uses the default target of the mode', () => {
+    const { db } = setup();
+    const session = startEmptySession(db, 'S');
+    const attempts = addSessionExercise(db, session.id, exerciseId(db, 'free_throws'), 'attempts');
+    const makes = addSessionExercise(db, session.id, exerciseId(db, 'mikan_drill'), 'makes');
+    const check = addSessionExercise(db, session.id, exerciseId(db, 'figure_8'));
+    // the app never leaves an exercise without sets; reach that state straight in the DB
+    db.delete(sessionSets).run();
+
+    expect(addSessionSet(db, attempts.id)).toMatchObject({ targetValue: 10, position: 0 });
+    expect(addSessionSet(db, makes.id)).toMatchObject({ targetValue: 5, position: 0 });
+    expect(addSessionSet(db, check.id)).toMatchObject({ targetValue: null, position: 0 });
   });
 
   test('reorderSessionExercises reorders, and rejects incomplete or foreign lists', () => {

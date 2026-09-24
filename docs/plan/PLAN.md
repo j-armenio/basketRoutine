@@ -57,7 +57,7 @@ This is a high-level plan. Each phase gets its own detailed plan before developm
 
 ## 4. Milestones
 
-Phases are ordered so a usable prototype (empty workout logged on the court) exists early; templates and catalog management come after the core flow is validated in real use.
+Phases are ordered so a usable prototype (empty workout logged on the court) exists early. Routines and workout templates come right after it, since starting a planned workout is the app's main flow; history and catalog management follow.
 
 ### Phase 0 — Project Setup
 - New Expo + TypeScript project, Android only, dark UI style.
@@ -84,23 +84,23 @@ Phases are ordered so a usable prototype (empty workout logged on the court) exi
 - Validation (makes never exceed attempts).
 - Every input saved immediately (survives app kill); "resume workout" banner like Hevy.
 - Finish (summary) / Discard (confirmation).
-- **Done when:** a real court session can be logged end to end on the phone — first real-use feedback round.
+- **Done when:** the flow works end to end on the phone (code part, unblocks Phase 4); then a real court session from the first APK closes the first real-use feedback round (tracked separately, so an EAS problem can't hold up the code).
 
-### Phase 4 — History
+### Phase 4 — Routines & Workout Templates
+- Create / rename / delete / reorder Routines.
+- Create / edit / delete Workout templates inside a Routine: add exercises from the seed catalog (the Phase 3 picker), set the target mode, reorder, remove, add/remove template sets with target values.
+- Start a session from a template; "overwrite template" option on Finish.
+- **Done when:** a full routine with multiple workouts can be built and started without touching code; templates never change unless explicitly overwritten.
+
+### Phase 5 — History
 - List of finished sessions (date, workout name, duration, overall FG%).
 - Session detail with per-exercise sets, FG% and notes; edit or delete a past session.
 - **Done when:** past sessions are browsable and editable.
 
-### Phase 5 — Exercise Catalog
+### Phase 6 — Exercise Catalog
 - Browse by category, search, exercise detail with description and GIF/video preview (text fallback).
 - Create / edit / delete custom exercises, choosing the tracking type (predefined ones are read-only, or duplicated to customize).
 - **Done when:** user can find any exercise and create a custom one.
-
-### Phase 6 — Routines & Workout Templates
-- Create / rename / delete / reorder Routines.
-- Create / edit / delete Workout templates inside a Routine: add exercises from the catalog, set the target mode, reorder, remove, add/remove template sets with target values.
-- Start a session from a template; "overwrite template" option on Finish.
-- **Done when:** a full routine with multiple workouts can be built and started without touching code; templates never change unless explicitly overwritten.
 
 ### Phase 7 — Polish, Testing & Release
 - E2E tests of the main flow (create routine → start → log → finish → history).
@@ -124,6 +124,6 @@ Phases are ordered so a usable prototype (empty workout logged on the court) exi
 - **Data loss on the court** → every input saved immediately; interrupted sessions can be resumed.
 - **Data lost on uninstall** (no manual backup in v1) → accepted trade-off. Android Auto Backup stays at its default (enabled) as a best-effort safety net; no work is spent on it.
 - **Media links break / no internet in the gym** → media optional; text description as fallback.
-- **Set logging awkward on the court** → validated early with the Phase 3 prototype, before building templates.
+- **Set logging awkward on the court** → validated early with the Phase 3 prototype (on the phone before templates are built, and on the court while they are).
 - **Broken history after deletes** → session snapshots + archiving instead of hard deletes.
 - **Scope creep** → backlog items only after Phase 7.

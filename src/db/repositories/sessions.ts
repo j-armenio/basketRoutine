@@ -1,9 +1,10 @@
+import { DEFAULT_TARGET_VALUE } from '@/domain/defaults';
 import { DomainError } from '@/domain/errors';
 import { summarizeSession } from '@/domain/summary';
 import type { SessionSummary } from '@/domain/summary';
 import type { TargetMode } from '@/domain/types';
 import { validateExerciseConfig, validateSet } from '@/domain/validation';
-import { asc, desc, eq, max } from 'drizzle-orm';
+import { asc, count, desc, eq, max } from 'drizzle-orm';
 import { sessionExercises, sessionSets, sessions } from '../schema';
 import type { Db, Session, SessionExercise, SessionSet } from '../types';
 import { assertValid, nextPosition, requireName } from './common';
@@ -125,6 +126,10 @@ export function getSessionDetail(db: Db, id: number) {
     .sync();
 }
 
+/**
+ * Adds an exercise at the end, with its first set so a new card is never empty: a shooting
+ * drill's set gets the default target for its mode, a `check` set carries no values.
+ */
 export function addSessionExercise(
   db: Db,
   sessionId: number,
@@ -142,7 +147,7 @@ export function addSessionExercise(
       .from(sessionExercises)
       .where(eq(sessionExercises.sessionId, sessionId))
       .get();
-    return tx
+    const added = tx
       .insert(sessionExercises)
       .values({
         sessionId,
@@ -155,6 +160,14 @@ export function addSessionExercise(
       })
       .returning()
       .get();
+    tx.insert(sessionSets)
+      .values({
+        sessionExerciseId: added.id,
+        position: 0,
+        targetValue: mode === null ? null : DEFAULT_TARGET_VALUE[mode],
+      })
+      .run();
+    return added;
   });
 }
 
@@ -203,7 +216,9 @@ export function updateSessionExerciseNote(
 
 /**
  * Appends a set. For `makes_attempts` exercises the target defaults to the
- * last set's target; `check` sets carry no values.
+ * last set's target, or to the mode's default target when there is no set
+ * (not reachable through the app, which keeps at least one set, but kept as a safety net);
+ * `check` sets carry no values.
  */
 export function addSessionSet(db: Db, sessionExerciseId: number, targetValue?: number): SessionSet {
   return db.transaction((tx) => {
@@ -219,7 +234,9 @@ export function addSessionSet(db: Db, sessionExerciseId: number, targetValue?: n
     const target =
       exercise.trackingType === 'check'
         ? (targetValue ?? null)
-        : (targetValue ?? last?.targetValue ?? null);
+        : (targetValue ??
+          last?.targetValue ??
+          (exercise.targetMode === null ? null : DEFAULT_TARGET_VALUE[exercise.targetMode]));
     assertValid(
       validateSet({
         trackingType: exercise.trackingType,
@@ -240,9 +257,18 @@ export function addSessionSet(db: Db, sessionExerciseId: number, targetValue?: n
   });
 }
 
+/** An exercise keeps at least one set: its last set can't be deleted (remove the exercise instead). */
 export function deleteSessionSet(db: Db, setId: number): void {
-  requireEditableSet(db, setId);
-  db.delete(sessionSets).where(eq(sessionSets.id, setId)).run();
+  db.transaction((tx) => {
+    const { set } = requireEditableSet(tx, setId);
+    const sets = tx
+      .select({ n: count() })
+      .from(sessionSets)
+      .where(eq(sessionSets.sessionExerciseId, set.sessionExerciseId))
+      .get();
+    if ((sets?.n ?? 0) <= 1) throw new DomainError('invalid_set_count');
+    tx.delete(sessionSets).where(eq(sessionSets.id, setId)).run();
+  });
 }
 
 export interface SessionSetPatch {

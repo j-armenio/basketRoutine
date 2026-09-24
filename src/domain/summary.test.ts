@@ -1,4 +1,4 @@
-import { summarizeExercise, summarizeSession } from './summary';
+import { countEmptySets, hasLoggedData, summarizeExercise, summarizeSession } from './summary';
 import type { SummaryExercise } from './summary';
 
 const shooting = (
@@ -101,5 +101,75 @@ describe('summarizeSession', () => {
       shooting: { makes: 0, attempts: 0, fgPct: null },
       check: { completed: 0, total: 0 },
     });
+  });
+});
+
+describe('hasLoggedData', () => {
+  test('is false for an empty or untouched session', () => {
+    expect(hasLoggedData(summarizeSession([]))).toBe(false);
+    expect(
+      hasLoggedData(summarizeSession([shooting('attempts', [[10, null]]), check([false])])),
+    ).toBe(false);
+  });
+
+  test('is true for a shooting set with a value, even 0 makes', () => {
+    expect(hasLoggedData(summarizeSession([shooting('attempts', [[10, 0]])]))).toBe(true);
+    expect(hasLoggedData(summarizeSession([shooting('makes', [[5, 8]])]))).toBe(true);
+  });
+
+  test('is true for a done check set', () => {
+    expect(hasLoggedData(summarizeSession([check([false, true])]))).toBe(true);
+  });
+});
+
+describe('countEmptySets', () => {
+  test('counts only shooting sets with no logged value', () => {
+    expect(
+      countEmptySets([
+        shooting('attempts', [
+          [10, 7],
+          [10, null],
+          [10, null],
+        ]),
+        shooting('makes', [[5, null]]),
+        check([false, false]),
+      ]),
+    ).toBe(3);
+    expect(countEmptySets([])).toBe(0);
+  });
+});
+
+describe('hasLoggedData', () => {
+  test('is false for an empty or untouched session', () => {
+    expect(hasLoggedData(summarizeSession([]))).toBe(false);
+    expect(
+      hasLoggedData(summarizeSession([shooting('attempts', [[10, null]]), check([false])])),
+    ).toBe(false);
+  });
+
+  test('is true for a shooting set with a value, even 0 makes', () => {
+    expect(hasLoggedData(summarizeSession([shooting('attempts', [[10, 0]])]))).toBe(true);
+    expect(hasLoggedData(summarizeSession([shooting('makes', [[5, 8]])]))).toBe(true);
+  });
+
+  test('is true for a done check set', () => {
+    expect(hasLoggedData(summarizeSession([check([false, true])]))).toBe(true);
+  });
+});
+
+describe('countEmptySets', () => {
+  test('counts only shooting sets with no logged value', () => {
+    expect(
+      countEmptySets([
+        shooting('attempts', [
+          [10, 7],
+          [10, null],
+          [10, null],
+        ]),
+        shooting('makes', [[5, null]]),
+        check([false, false]),
+      ]),
+    ).toBe(3);
+    expect(countEmptySets([])).toBe(0);
   });
 });

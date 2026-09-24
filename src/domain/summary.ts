@@ -78,3 +78,21 @@ export function summarizeSession(exercises: SummaryExercise[]): SessionSummary {
     check: checkTotals(exercises),
   };
 }
+
+/** True when any shooting set has a value or any check set is done. */
+export function hasLoggedData(summary: SessionSummary): boolean {
+  // A logged shooting set always has attempts (a target is >= 1, and logged attempts are >= it).
+  return summary.shooting.attempts > 0 || summary.check.completed > 0;
+}
+
+/** The shooting sets with no logged value, which are left out of FG%. */
+export function countEmptySets(exercises: SummaryExercise[]): number {
+  let empty = 0;
+  for (const exercise of exercises) {
+    if (exercise.trackingType !== 'makes_attempts') continue;
+    for (const set of exercise.sets) {
+      if (set.loggedValue === null) empty += 1;
+    }
+  }
+  return empty;
+}

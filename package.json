@@ -57,6 +57,10 @@
     "preset": "jest-expo/android",
     "moduleNameMapper": {
       "^@/(.*)$": "<rootDir>/src/$1"
-    }
+    },
+    "setupFiles": [
+      "react-native-gesture-handler/jestSetup",
+      "<rootDir>/jest.setup.js"
+    ]
   }
 }
