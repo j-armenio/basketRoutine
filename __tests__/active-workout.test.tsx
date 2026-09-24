@@ -20,6 +20,9 @@ jest.mock('@/db/client', () => {
 });
 jest.mock('@/db/useDatabaseSetup', () => ({ useDatabaseSetup: jest.fn() }));
 
+// Rendering the real router is slow on a cold CI runner (the first test there took over 5 s).
+jest.setTimeout(30_000);
+
 const { db } = jest.requireMock('@/db/client') as { db: Db };
 
 // renderRouter enables Jest fake timers, so the user must advance them or press hangs.

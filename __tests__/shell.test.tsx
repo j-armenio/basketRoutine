@@ -17,6 +17,9 @@ jest.mock('@/db/client', () => {
 // Drizzle's useMigrations needs expo-sqlite; migrations + seed are covered by the DB tests.
 jest.mock('@/db/useDatabaseSetup', () => ({ useDatabaseSetup: jest.fn() }));
 
+// Rendering the real router is slow on a cold CI runner (the first test there took over 5 s).
+jest.setTimeout(30_000);
+
 const mockedSetup = jest.mocked(useDatabaseSetup);
 
 // renderRouter enables Jest fake timers, so the user must advance them or press hangs.
