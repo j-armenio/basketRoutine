@@ -4,17 +4,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project state
 
-**Phase 0 (scaffolding) and Phase 1 (data layer) are done** (final checklist in `docs/plan/phase-1.md` fully ticked: on-phone check passed, CI green on `main`). The app is an Expo Router + TypeScript project, Android only, dark UI. `app/` holds routes (`_layout.tsx` runs migrations + seed behind the splash screen; `index.tsx` is a temporary DB-check screen until Phase 2); everything else lives in `src/`:
+**Phase 0 (scaffolding) and Phase 1 (data layer) are done** (final checklist in `docs/plan/phase-1.md` fully ticked: on-phone check passed, CI green on `main`). **Phase 2 (design system and app shell) is done** (on-phone check passed). The app is an Expo Router + TypeScript project, Android only, dark UI. `app/` holds routes only: `_layout.tsx` (runs migrations + seed and preloads the icon font behind the splash screen, then renders the `Stack` inside a `ThemeProvider`) and `(tabs)/` (bottom tabs Workout `index.tsx` · Exercises · History, placeholder screens; headers are off, each screen draws its title through `Screen`). Everything else lives in `src/`:
 
 - `src/domain/` — pure TypeScript, no DB imports: enum lists (`types.ts`), validation returning `{ ok, reason }` (`validation.ts`), set FG% (`fg.ts`), exercise/session summaries (`summary.ts`), and `DomainError` (`errors.ts`).
 - `src/db/` — `schema.ts` (Drizzle), `migrations/` (generated, never hand-edited), `client.ts` (expo-sqlite, opens `basket-routine.db`), `useDatabaseSetup.ts` (migrate + seed), `seed/` (38 predefined exercises, upserted by `seedKey`), `repositories/` (plain functions taking a `Db` as first argument: exercises, routines, workouts, sessions; they throw `DomainError` on rule violations), `test-utils.ts` (`createTestDb()`: in-memory better-sqlite3 with the real migrations).
-- `src/theme/colors.ts`.
+- `src/theme/` — design tokens: `colors.ts` (role-named, contrast-tested in `colors.test.ts`), `spacing.ts` (spacing, radius, `touch` and `input` sizes), `typography.ts`, `navigationTheme.ts` (React Navigation dark theme built from the tokens). Styling is `StyleSheet.create` + these tokens, no styling library.
+- `src/components/` — base components: `Screen`, `AppText`, `Button` (variants primary/secondary/ghost/danger), `Card`, `EmptyState`, `Icon`. **Only `Icon` imports `expo-symbols`** (Android symbol name, always with a `tintColor`). All text goes through `AppText`; pressables are at least 48 dp (`touch.min`).
 
 Commands: `npm run lint`, `npm run format` / `format:check`, `npm run typecheck`, `npm test`, `npm run db:generate` (after any change to `src/db/schema.ts`), `npx expo start` (dev loop — scan the QR code with Expo Go). CI (`.github/workflows/ci.yml`) runs lint, format check, typecheck, tests, a schema/migrations-in-sync check (`db:generate` must leave `src/db/migrations` unchanged) and `npx expo-doctor` on every push and PR. An EAS project is linked (`@jarmenio/basket-routine`, ID in `app.json`'s `extra.eas.projectId`).
 
 **Migration policy:** until an APK with a DB is installed on the phone, the initial migration may be deleted and regenerated freely (clear Expo Go's data afterwards). After that, migrations are append-only.
 
-Tests live next to the code (`*.test.ts`); DB tests use the `@jest-environment node` docblock. Repositories call `.sync()` on Drizzle relational queries and read inserted rows back with `.returning()`.
+Tests live next to the code (`*.test.ts` / `*.test.tsx`); DB tests use the `@jest-environment node` docblock. Repositories call `.sync()` on Drizzle relational queries and read inserted rows back with `.returning()`. Jest runs on the `jest-expo/android` preset. Navigation is tested with `renderRouter` from `expo-router/testing-library` in `__tests__/shell.test.tsx` (real root layout; `@/db/client` and `@/db/useDatabaseSetup` mocked). `renderRouter` pitfalls: `await` it (Testing Library v14's render is async); `getPathname()` lives on the returned Promise, not on the awaited result, so keep the Promise (`const app = renderRouter(...); await app; app.getPathname()`); it enables fake timers, so use `userEvent.setup({ advanceTimers: jest.advanceTimersByTime })`; tabs have the `tab` role and are found by their `tabBarAccessibilityLabel`.
 
 Pending from Phase 0 (see `docs/plan/phase-0.md` final checklist):
 
@@ -30,14 +31,16 @@ Basket Routine: an Android-only, personal-use app (sideloaded APK, no Play Store
 ## Planning docs
 
 - `docs/plan/PLAN.md` — high-level plan: tech stack, domain model, main user flow, milestones (Phase 0–7), backlog, risks. Kept free of deep technical detail by design.
-- `docs/plan/phase-N.md` — one detailed plan per phase, written just before that phase starts (`phase-0.md` and `phase-1.md` done). Contains the concrete decisions, steps, and a "done when" checklist for that phase.
+- `docs/plan/phase-N.md` — one detailed plan per phase, written just before that phase starts (`phase-0.md` and `phase-1.md` done, `phase-2.md` implemented). Contains the concrete decisions, steps, and a "done when" checklist for that phase.
 
 When planning or starting a new phase, write its `docs/plan/phase-N.md` before implementing, following the level of detail in `phase-0.md`.
 
 ## Current status
 
 - Phase 0 done (pending: first completed `preview` APK build installed on the phone, and the keystore backup).
-- Phase 1 done (on-phone check passed, CI green). Phase 2 not planned yet.
+- Phase 1 done (on-phone check passed, CI green).
+- Phase 2 done (`docs/plan/phase-2.md`): on-phone check passed; CI to be confirmed green on `main` after the push.
+- Decision: the first `preview` APK build (which also clears the pending Phase 0 items) happens after Phase 3, not at the end of the project.
 
 ## Tech stack
 

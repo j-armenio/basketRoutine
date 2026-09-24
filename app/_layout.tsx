@@ -1,8 +1,11 @@
 import { useDatabaseSetup } from '@/db/useDatabaseSetup';
 import { colors } from '@/theme/colors';
-import { Stack } from 'expo-router';
+import { navigationTheme } from '@/theme/navigationTheme';
+import { Stack, ThemeProvider } from 'expo-router';
+import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
+import regular from 'expo-symbols/androidWeights/regular';
 import { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -10,10 +13,14 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const { ready, error } = useDatabaseSetup();
+  // Preloads the icon font behind the splash, so tab icons don't wait for it. If it
+  // fails we carry on: icons fall back to their empty box.
+  const [fontsLoaded, fontError] = useFonts({ [regular.name]: regular.font });
+  const fontsSettled = fontsLoaded || !!fontError;
 
   useEffect(() => {
-    if (ready || error) SplashScreen.hideAsync();
-  }, [ready, error]);
+    if (error || (ready && fontsSettled)) SplashScreen.hideAsync();
+  }, [ready, error, fontsSettled]);
 
   if (error) {
     return (
@@ -24,10 +31,10 @@ export default function RootLayout() {
     );
   }
 
-  if (!ready) return null;
+  if (!ready || !fontsSettled) return null;
 
   return (
-    <>
+    <ThemeProvider value={navigationTheme}>
       <Stack
         screenOptions={{
           headerShown: false,
@@ -35,7 +42,7 @@ export default function RootLayout() {
         }}
       />
       <StatusBar style="light" />
-    </>
+    </ThemeProvider>
   );
 }
 
