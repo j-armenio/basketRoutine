@@ -246,7 +246,7 @@ Everything runs from the APK, in airplane mode.
 - [x] Adding an exercise creates its first set, its last set can't be deleted, and "Add Set" works on an exercise with no sets (repository tests).
 - [x] Flow tests cover start → log → invalid entry → finish → summary, "Add Set" with the keyboard open, discard, and resume after an app kill, asserting the DB and the final pathname.
 - [x] On the phone (Expo Go): the full flow works, the keyboard never hides the focused input, and a value typed before killing the app is there after reopening.
-- [ ] CI is green on `main`.
+- [x] CI is green on `main`.
 
 ### Part B — APK and court session
 
