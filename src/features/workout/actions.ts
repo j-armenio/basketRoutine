@@ -3,38 +3,24 @@ import {
   addSessionExercise,
   addSessionSet,
   deleteSessionSet,
+  discardAndStartFromWorkout,
   discardSession,
   finishSession,
+  getSessionDetail,
+  overwriteWorkoutFromSession,
   removeSessionExercise,
   reorderSessionExercises,
   startEmptySession,
+  startSessionFromWorkout,
   updateSessionExerciseNote,
   updateSessionSet,
   type SessionSetPatch,
 } from '@/db/repositories/sessions';
+import { getWorkout, getWorkoutWithExercises } from '@/db/repositories/workouts';
 import { defaultWorkoutName } from '@/domain/defaults';
-import { DomainError, type DomainErrorReason } from '@/domain/errors';
+import { sameStructure, structureFromSession, structureFromTemplate } from '@/domain/template';
 import type { TargetMode } from '@/domain/types';
-import { notifySessionChanged } from './sessionStore';
-
-export type ActionResult<T> = { ok: true; value: T } | { ok: false; reason: DomainErrorReason };
-
-/**
- * Every session write goes through here: it calls the repository, tells the store, and turns a
- * `DomainError` into a reason the screen can show. Any other error is rethrown, so a real bug
- * still shows up. A failed write doesn't notify: nothing changed.
- */
-function run<T>(write: () => T): ActionResult<T> {
-  let value: T;
-  try {
-    value = write();
-  } catch (error) {
-    if (error instanceof DomainError) return { ok: false, reason: error.reason };
-    throw error;
-  }
-  notifySessionChanged();
-  return { ok: true, value };
-}
+import { run } from '../dataStore';
 
 export function startEmptyWorkout() {
   return run(() => startEmptySession(db, defaultWorkoutName(new Date())));
@@ -74,4 +60,36 @@ export function finishWorkout(sessionId: number) {
 
 export function discardWorkout(sessionId: number) {
   return run(() => discardSession(db, sessionId));
+}
+
+/** Starts a session from a template. Fails with `session_in_progress_exists` if one is running. */
+export function startWorkoutFromTemplate(workoutId: number) {
+  return run(() => startSessionFromWorkout(db, workoutId));
+}
+
+/** Replaces the running session with one from the template, in one transaction. */
+export function discardAndStartFromTemplate(workoutId: number) {
+  return run(() => discardAndStartFromWorkout(db, workoutId));
+}
+
+/** Overwrites the template the finished session came from with the session's structure. */
+export function updateTemplateFromSession(sessionId: number) {
+  return run(() => overwriteWorkoutFromSession(db, sessionId));
+}
+
+/**
+ * The template to offer to update after a Finish: the session's workout, if it is still active
+ * and its structure differs from the session's. Reads by id, since after Finish the screen has no
+ * in-progress session left. Doesn't notify.
+ */
+export function templateUpdateCandidate(sessionId: number) {
+  const session = getSessionDetail(db, sessionId);
+  if (!session || session.workoutId === null) return undefined;
+  const workout = getWorkout(db, session.workoutId);
+  if (!workout || workout.archivedAt) return undefined;
+  const template = getWorkoutWithExercises(db, workout.id);
+  if (!template) return undefined;
+  return sameStructure(structureFromSession(session), structureFromTemplate(template))
+    ? undefined
+    : workout;
 }

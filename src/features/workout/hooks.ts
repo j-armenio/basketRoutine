@@ -5,32 +5,32 @@ import {
   listFinishedSessions,
 } from '@/db/repositories/sessions';
 import { useMemo } from 'react';
-import { useSessionVersion } from './sessionStore';
+import { useDataVersion } from '../dataStore';
 
 // Each hook is a sync repository read (well under a millisecond on a session this small),
-// redone when the store's version changes. The memo callback mentions `version` because
+// redone when the data store's version changes. The memo callback mentions `version` because
 // react-hooks/exhaustive-deps flags a dependency the callback doesn't use.
 
 export function useInProgressSession() {
-  const version = useSessionVersion();
+  const version = useDataVersion();
   return useMemo(() => {
-    void version; // re-read after any session write
+    void version; // re-read after any write
     return getInProgressSession(db);
   }, [version]);
 }
 
 export function useSessionDetail(id: number | undefined) {
-  const version = useSessionVersion();
+  const version = useDataVersion();
   return useMemo(() => {
-    void version; // re-read after any session write
+    void version; // re-read after any write
     return id === undefined ? undefined : getSessionDetail(db, id);
   }, [id, version]);
 }
 
 export function useFinishedSessionCount(): number {
-  const version = useSessionVersion();
+  const version = useDataVersion();
   return useMemo(() => {
-    void version; // re-read after any session write
+    void version; // re-read after any write
     return listFinishedSessions(db).length;
   }, [version]);
 }

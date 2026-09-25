@@ -2,7 +2,7 @@ import { sessions } from '@/db/schema';
 import { getInProgressSession, getSessionDetail } from '@/db/repositories/sessions';
 import { useDatabaseSetup } from '@/db/useDatabaseSetup';
 import type { Db } from '@/db/types';
-import { notifySessionChanged } from '@/features/workout/sessionStore';
+import { notifyDataChanged } from '@/features/dataStore';
 import { act, cleanup, fireEvent, screen, userEvent, within } from '@testing-library/react-native';
 import { renderRouter } from 'expo-router/testing-library';
 import { Alert } from 'react-native';
@@ -39,7 +39,7 @@ afterEach(async () => {
   await cleanup();
   jest.restoreAllMocks();
   db.delete(sessions).run(); // exercises and sets cascade
-  notifySessionChanged();
+  notifyDataChanged();
 });
 
 // The route helpers (getPathname...) live on the returned Promise, not on the awaited result,

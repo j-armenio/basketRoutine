@@ -2,15 +2,45 @@ import { Button } from '@/components/Button';
 import { EmptyState } from '@/components/EmptyState';
 import { IconButton } from '@/components/IconButton';
 import { Screen } from '@/components/Screen';
-import { discardWorkout, finishWorkout, moveExercise } from '@/features/workout/actions';
+import {
+  discardWorkout,
+  finishWorkout,
+  moveExercise,
+  templateUpdateCandidate,
+  updateTemplateFromSession,
+} from '@/features/workout/actions';
 import { ExerciseCard } from '@/features/workout/ExerciseCard';
 import { useInProgressSession, useSessionDetail } from '@/features/workout/hooks';
 import { leaveScreen } from '@/features/workout/navigation';
+import { reasonMessage } from '@/domain/messages';
 import { moveItem } from '@/domain/order';
 import { countEmptySets, hasLoggedData, summarizeSession } from '@/domain/summary';
 import { Redirect, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Keyboard } from 'react-native';
+
+/**
+ * After a Finish, offers to copy the session's structure to the template it came from, when that
+ * differs. Reads by the captured id: the screen has no in-progress session left by then.
+ */
+function offerTemplateUpdate(sessionId: number) {
+  const workout = templateUpdateCandidate(sessionId);
+  if (!workout) return;
+  Alert.alert(
+    `Update "${workout.name}"?`,
+    "Save this workout's exercises and sets to the template. Logged values and notes aren't copied.",
+    [
+      { text: 'Keep template', style: 'cancel' },
+      {
+        text: 'Update template',
+        onPress: () => {
+          const result = updateTemplateFromSession(sessionId);
+          if (!result.ok) Alert.alert("Couldn't update template", reasonMessage(result.reason));
+        },
+      },
+    ],
+  );
+}
 
 export default function ActiveWorkoutScreen() {
   const router = useRouter();
@@ -58,7 +88,10 @@ export default function ActiveWorkoutScreen() {
         {
           text: 'Finish',
           onPress: () => {
-            if (finishWorkout(session.id).ok) router.replace(`/workout-summary/${session.id}`);
+            if (!finishWorkout(session.id).ok) return;
+            // The summary goes first, so it shows behind the question.
+            router.replace(`/workout-summary/${session.id}`);
+            offerTemplateUpdate(session.id);
           },
         },
       ],

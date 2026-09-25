@@ -3,35 +3,34 @@ import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { IconButton } from '@/components/IconButton';
-import { formatFgPct } from '@/domain/format';
-import { summarizeExercise } from '@/domain/summary';
 import { spacing } from '@/theme/spacing';
 import { useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
-import { addSet, removeExercise } from './actions';
-import { CheckSetRow } from './CheckSetRow';
-import { ExerciseNote } from './ExerciseNote';
-import type { SessionExerciseDetail } from './hooks';
-import { SetTableHeader, modeSubtitle } from './SetTableHeader';
-import { ShootingSetRow } from './ShootingSetRow';
+import { SetTableHeader, modeSubtitle } from '../workout/SetTableHeader';
+import { updateDraft } from './draftStore';
+import { TemplateSetRow } from './TemplateSetRow';
+import { addSet, moveExercise, removeExercise, type DraftExercise } from './templateDraft';
 
-type ExerciseCardProps = {
-  exercise: SessionExerciseDetail;
+type TemplateExerciseCardProps = {
+  exercise: DraftExercise;
   index: number;
   count: number;
-  onMove: (delta: -1 | 1) => void;
 };
 
-export function ExerciseCard({ exercise, index, count, onMove }: ExerciseCardProps) {
+/** An exercise of the template being edited: its sets hold targets only, nothing is logged. */
+export function TemplateExerciseCard({ exercise, index, count }: TemplateExerciseCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const { targetMode } = exercise;
-  const summary = summarizeExercise(exercise);
 
   const confirmRemove = () =>
     Alert.alert('Remove exercise?', `${exercise.name} and its sets will be removed.`, [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Remove', style: 'destructive', onPress: () => removeExercise(exercise.id) },
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: () => updateDraft((draft) => removeExercise(draft, exercise.key)),
+      },
     ]);
+  const move = (delta: -1 | 1) => updateDraft((draft) => moveExercise(draft, exercise.key, delta));
 
   return (
     <Card>
@@ -39,7 +38,7 @@ export function ExerciseCard({ exercise, index, count, onMove }: ExerciseCardPro
         <View style={styles.titles}>
           <AppText variant="heading">{exercise.name}</AppText>
           <AppText variant="caption" tone="muted">
-            {modeSubtitle(targetMode)}
+            {modeSubtitle(exercise.targetMode)}
           </AppText>
         </View>
         <IconButton
@@ -49,39 +48,25 @@ export function ExerciseCard({ exercise, index, count, onMove }: ExerciseCardPro
         />
       </View>
       <View style={styles.table}>
-        <SetTableHeader targetMode={targetMode} />
-        {exercise.sets.map((set, position) =>
-          targetMode ? (
-            <ShootingSetRow
-              key={set.id}
-              set={set}
-              number={position + 1}
-              targetMode={targetMode}
-              deletable={exercise.sets.length > 1}
-            />
-          ) : (
-            <CheckSetRow
-              key={set.id}
-              set={set}
-              number={position + 1}
-              deletable={exercise.sets.length > 1}
-            />
-          ),
-        )}
+        <SetTableHeader targetMode={exercise.targetMode} hideLogged />
+        {exercise.sets.map((set, position) => (
+          <TemplateSetRow
+            key={set.key}
+            exerciseKey={exercise.key}
+            set={set}
+            number={position + 1}
+            targetMode={exercise.targetMode}
+            deletable={exercise.sets.length > 1}
+          />
+        ))}
       </View>
-      {summary.trackingType === 'makes_attempts' && summary.attempts > 0 && (
-        <AppText tone="muted">
-          Total: {summary.makes} makes / {summary.attempts} attempts · {formatFgPct(summary.fgPct)}
-        </AppText>
-      )}
       <Button
         variant="ghost"
         icon="add"
         label="Add Set"
         fullWidth
-        onPress={() => addSet(exercise.id)}
+        onPress={() => updateDraft((draft) => addSet(draft, exercise.key))}
       />
-      <ExerciseNote exerciseId={exercise.id} name={exercise.name} note={exercise.note} />
       <ActionSheet
         visible={menuOpen}
         title={exercise.name}
@@ -90,13 +75,13 @@ export function ExerciseCard({ exercise, index, count, onMove }: ExerciseCardPro
             label: 'Move up',
             icon: 'arrow_upward',
             disabled: index === 0,
-            onPress: () => onMove(-1),
+            onPress: () => move(-1),
           },
           {
             label: 'Move down',
             icon: 'arrow_downward',
             disabled: index === count - 1,
-            onPress: () => onMove(1),
+            onPress: () => move(1),
           },
           { label: 'Remove exercise', icon: 'delete', destructive: true, onPress: confirmRemove },
         ]}

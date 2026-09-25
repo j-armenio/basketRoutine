@@ -17,3 +17,15 @@ export function assertValid(result: ValidationResult): void {
 export function nextPosition(max: number | null | undefined): number {
   return (max ?? -1) + 1;
 }
+
+/** `orderedIds` must be exactly `currentIds`, each once and in any order, or `invalid_order`. */
+export function assertSameIds(currentIds: readonly number[], orderedIds: readonly number[]): void {
+  const unique = new Set(orderedIds);
+  if (
+    unique.size !== orderedIds.length ||
+    orderedIds.length !== currentIds.length ||
+    !currentIds.every((id) => unique.has(id))
+  ) {
+    throw new DomainError('invalid_order');
+  }
+}

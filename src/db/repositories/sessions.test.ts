@@ -11,11 +11,13 @@ import {
   addSessionExercise,
   addSessionSet,
   deleteSessionSet,
+  discardAndStartFromWorkout,
   discardSession,
   finishSession,
   getInProgressSession,
   getSessionDetail,
   listFinishedSessions,
+  overwriteWorkoutFromSession,
   removeSessionExercise,
   reorderSessionExercises,
   startEmptySession,
@@ -272,17 +274,17 @@ describe('editing sessions', () => {
     expect(detailOf(db, session.id).exercises.map((e) => e.id)).toEqual([c, a, b]);
 
     const reject = (ids: number[]) => reasonOf(() => reorderSessionExercises(db, session.id, ids));
-    expect(reject([a, b])).toBe('invalid_exercise_order');
-    expect(reject([a, b, c, c])).toBe('invalid_exercise_order');
-    expect(reject([a, a, b])).toBe('invalid_exercise_order');
-    expect(reject([a, b, 999])).toBe('invalid_exercise_order');
+    expect(reject([a, b])).toBe('invalid_order');
+    expect(reject([a, b, c, c])).toBe('invalid_order');
+    expect(reject([a, a, b])).toBe('invalid_order');
+    expect(reject([a, b, 999])).toBe('invalid_order');
 
     // an exercise from another (finished) session is foreign
     finishSession(db, session.id);
     const other = startEmptySession(db, 'Other');
     const mine = addSessionExercise(db, other.id, exerciseId(db, 'figure_8'));
     expect(reasonOf(() => reorderSessionExercises(db, other.id, [mine.id, a]))).toBe(
-      'invalid_exercise_order',
+      'invalid_order',
     );
     expect(detailOf(db, other.id).exercises.map((e) => e.id)).toEqual([mine.id]);
   });
@@ -423,5 +425,135 @@ describe('finishing and discarding', () => {
     const setRows = db.select({ n: count() }).from(sessionSets).get()!.n;
     expect([exerciseRows, setRows]).toEqual([0, 0]);
     expect(reasonOf(() => discardSession(db, session.id))).toBe('not_found');
+  });
+});
+
+describe('templates and sessions', () => {
+  test('the template never changes on its own: edit a session all the way to Finish', () => {
+    const { db, workout } = setup();
+    const before = getWorkoutWithExercises(db, workout.id);
+    const session = startSessionFromWorkout(db, workout.id);
+    const detail = detailOf(db, session.id);
+
+    addSessionSet(db, detail.exercises[0].id);
+    updateSessionSet(db, detail.exercises[0].sets[0].id, { targetValue: 20, loggedValue: 12 });
+    updateSessionSet(db, detail.exercises[2].sets[0].id, { completed: true });
+    updateSessionExerciseNote(db, detail.exercises[0].id, 'felt good');
+    removeSessionExercise(db, detail.exercises[1].id);
+    addSessionExercise(db, session.id, exerciseId(db, 'crossover'));
+    finishSession(db, session.id);
+
+    expect(getWorkoutWithExercises(db, workout.id)).toEqual(before);
+  });
+
+  test('overwriteWorkoutFromSession copies exercises, modes and targets, not logged values or notes', () => {
+    const { db, workout } = setup();
+    const session = startSessionFromWorkout(db, workout.id);
+    const detail = detailOf(db, session.id);
+    addSessionSet(db, detail.exercises[0].id, 15);
+    updateSessionSet(db, detail.exercises[0].sets[0].id, { targetValue: 20, loggedValue: 12 });
+    updateSessionSet(db, detail.exercises[2].sets[0].id, { completed: true });
+    updateSessionExerciseNote(db, detail.exercises[0].id, 'felt good');
+    removeSessionExercise(db, detail.exercises[1].id);
+    const added = addSessionExercise(db, session.id, exerciseId(db, 'free_throws'), 'makes');
+    addSessionSet(db, added.id); // a second, empty set: the structure includes it
+    finishSession(db, session.id);
+
+    overwriteWorkoutFromSession(db, session.id);
+
+    const template = getWorkoutWithExercises(db, workout.id)!;
+    expect(template.name).toBe('Shooting day');
+    expect(
+      template.exercises.map((e) => [
+        e.exercise.name,
+        e.targetMode,
+        e.sets.map((s) => s.targetValue),
+      ]),
+    ).toEqual([
+      ['Free Throws', 'attempts', [20, 10, 15]],
+      ['Figure 8', null, [null, null]],
+      ['Free Throws', 'makes', [5, 5]],
+    ]);
+    expect(template.exercises.map((e) => e.position)).toEqual([0, 1, 2]);
+  });
+
+  test('existing sessions still point to the workout after an overwrite', () => {
+    const { db, workout } = setup();
+    const first = startSessionFromWorkout(db, workout.id);
+    finishSession(db, first.id);
+    const second = startSessionFromWorkout(db, workout.id);
+    removeSessionExercise(db, detailOf(db, second.id).exercises[0].id);
+    finishSession(db, second.id);
+
+    overwriteWorkoutFromSession(db, second.id);
+
+    expect(detailOf(db, first.id)).toMatchObject({ workoutId: workout.id });
+    expect(detailOf(db, second.id)).toMatchObject({ workoutId: workout.id });
+    expect(detailOf(db, first.id).exercises.map((e) => e.name)).toEqual([
+      'Free Throws',
+      'Mikan Drill',
+      'Figure 8',
+    ]);
+  });
+
+  test('overwriteWorkoutFromSession refuses an unfinished session, one with no template, an archived workout', () => {
+    const { db, workout } = setup();
+    const running = startSessionFromWorkout(db, workout.id);
+    expect(reasonOf(() => overwriteWorkoutFromSession(db, running.id))).toBe(
+      'session_not_finished',
+    );
+    finishSession(db, running.id);
+
+    const empty = startEmptySession(db, 'Quick');
+    finishSession(db, empty.id);
+    expect(reasonOf(() => overwriteWorkoutFromSession(db, empty.id))).toBe('not_found');
+    expect(reasonOf(() => overwriteWorkoutFromSession(db, 999))).toBe('not_found');
+
+    archiveWorkout(db, workout.id);
+    expect(reasonOf(() => overwriteWorkoutFromSession(db, running.id))).toBe('not_found');
+  });
+
+  test('a session left with no exercise cannot overwrite the template', () => {
+    const { db, workout } = setup();
+    const session = startSessionFromWorkout(db, workout.id);
+    for (const exercise of detailOf(db, session.id).exercises) {
+      removeSessionExercise(db, exercise.id);
+    }
+    finishSession(db, session.id);
+    const before = getWorkoutWithExercises(db, workout.id);
+
+    expect(reasonOf(() => overwriteWorkoutFromSession(db, session.id))).toBe('empty_workout');
+    expect(getWorkoutWithExercises(db, workout.id)).toEqual(before);
+  });
+
+  test('discardAndStartFromWorkout replaces the in-progress session', () => {
+    const { db, workout } = setup();
+    const old = startEmptySession(db, 'Old');
+    addSessionExercise(db, old.id, exerciseId(db, 'crossover'));
+
+    const fresh = discardAndStartFromWorkout(db, workout.id);
+
+    expect(getInProgressSession(db)?.id).toBe(fresh.id);
+    expect(getSessionDetail(db, old.id)).toBeUndefined();
+    expect(fresh).toMatchObject({ workoutId: workout.id, name: 'Shooting day' });
+    expect(detailOf(db, fresh.id).exercises).toHaveLength(3);
+    expect(db.select({ n: count() }).from(sessionExercises).get()!.n).toBe(3);
+  });
+
+  test('discardAndStartFromWorkout also starts when nothing is in progress', () => {
+    const { db, workout } = setup();
+    expect(discardAndStartFromWorkout(db, workout.id).workoutId).toBe(workout.id);
+  });
+
+  test('a failed discardAndStartFromWorkout keeps the current session', () => {
+    const { db, workout } = setup();
+    archiveWorkout(db, workout.id);
+    const current = startEmptySession(db, 'Current');
+    addSessionExercise(db, current.id, exerciseId(db, 'crossover'));
+
+    expect(reasonOf(() => discardAndStartFromWorkout(db, workout.id))).toBe('not_found');
+
+    expect(getInProgressSession(db)?.id).toBe(current.id);
+    expect(detailOf(db, current.id).exercises).toHaveLength(1);
   });
 });

@@ -9,7 +9,7 @@ import type { TargetMode } from '@/domain/types';
 import { spacing } from '@/theme/spacing';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { deleteSet } from './actions';
+import { deleteSet, updateSet } from './actions';
 import type { SessionSetDetail } from './hooks';
 import { setTable } from './setTable';
 import type { SetField } from './setDraft';
@@ -37,6 +37,7 @@ export function ShootingSetRow({ set, number, targetMode, deletable }: ShootingS
     exercise,
     set,
     field,
+    save: (value: number | null) => updateSet(set.id, { [field]: value }),
     onEdit: () => setRejection(null),
     onRejected: (reason: DomainErrorReason) => setRejection({ field, reason }),
   });

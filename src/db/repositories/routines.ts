@@ -1,8 +1,8 @@
 import { DomainError } from '@/domain/errors';
 import { and, asc, eq, isNull, max } from 'drizzle-orm';
-import { routines, workouts } from '../schema';
+import { routines, workoutExercises, workouts } from '../schema';
 import type { Db, Routine } from '../types';
-import { nextPosition, requireName } from './common';
+import { assertSameIds, nextPosition, requireName } from './common';
 
 export function listRoutines(db: Db): Routine[] {
   return db
@@ -58,3 +58,44 @@ export function archiveRoutine(db: Db, id: number): void {
       .run();
   });
 }
+
+/** `orderedIds` must be exactly the active routines' ids, each once. Archived ones keep their position. */
+export function reorderRoutines(db: Db, orderedIds: number[]): void {
+  db.transaction((tx) => {
+    assertSameIds(
+      listRoutines(tx).map((routine) => routine.id),
+      orderedIds,
+    );
+    orderedIds.forEach((id, position) => {
+      tx.update(routines).set({ position }).where(eq(routines.id, id)).run();
+    });
+  });
+}
+
+/**
+ * The active routines with their active workouts, each with its ordered exercises (catalog name
+ * only), everything in position order: what the Workout tab lists.
+ */
+export function listRoutinesWithWorkouts(db: Db) {
+  return db.query.routines
+    .findMany({
+      where: isNull(routines.archivedAt),
+      orderBy: [asc(routines.position), asc(routines.id)],
+      with: {
+        workouts: {
+          where: (workout, { isNull: isNullOp }) => isNullOp(workout.archivedAt),
+          orderBy: [asc(workouts.position), asc(workouts.id)],
+          with: {
+            exercises: {
+              orderBy: [asc(workoutExercises.position), asc(workoutExercises.id)],
+              with: { exercise: { columns: { name: true } } },
+            },
+          },
+        },
+      },
+    })
+    .sync();
+}
+
+export type RoutineWithWorkouts = ReturnType<typeof listRoutinesWithWorkouts>[number];
+export type WorkoutInRoutine = RoutineWithWorkouts['workouts'][number];

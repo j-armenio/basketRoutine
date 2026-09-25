@@ -10,19 +10,24 @@ import { listExercises } from '@/db/repositories/exercises';
 import type { Exercise } from '@/db/types';
 import { reasonMessage } from '@/domain/messages';
 import { CATEGORIES, CATEGORY_LABELS, type TargetMode } from '@/domain/types';
+import { getDraft, updateDraft } from '@/features/routines/draftStore';
+import { addExercise as addToTemplate } from '@/features/routines/templateDraft';
 import { addExercise } from '@/features/workout/actions';
 import { useInProgressSession } from '@/features/workout/hooks';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
-import { Redirect, useRouter } from 'expo-router';
+import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Alert, SectionList, StyleSheet } from 'react-native';
 
 export default function AddExerciseScreen() {
   const router = useRouter();
+  // `?to=template` adds to the template being edited instead of the session in progress.
+  const { to } = useLocalSearchParams<{ to?: string }>();
+  const toTemplate = to === 'template';
   const session = useInProgressSession();
-  // Redirects only when it mounts with no session (see the active workout).
-  const [mountedWithSession] = useState(session !== undefined);
+  // Redirects only when it mounts with nothing to add to (see the active workout).
+  const [mountedWithTarget] = useState(toTemplate ? getDraft() !== null : session !== undefined);
   const [search, setSearch] = useState('');
   const [pending, setPending] = useState<Exercise | null>(null);
 
@@ -34,9 +39,16 @@ export default function AddExerciseScreen() {
     })).filter((section) => section.data.length > 0);
   }, [search]);
 
-  if (!session) return mountedWithSession ? null : <Redirect href="/" />;
+  if (!toTemplate && !session) return mountedWithTarget ? null : <Redirect href="/" />;
+  if (toTemplate && !mountedWithTarget) return <Redirect href="/" />;
 
   const add = (exercise: Exercise, targetMode?: TargetMode) => {
+    if (toTemplate) {
+      updateDraft((draft) => addToTemplate(draft, exercise, targetMode ?? null));
+      router.back();
+      return;
+    }
+    if (!session) return;
     const result = addExercise(session.id, exercise.id, targetMode);
     if (result.ok) router.back();
     else Alert.alert("Couldn't add exercise", reasonMessage(result.reason));

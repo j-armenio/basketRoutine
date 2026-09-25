@@ -35,3 +35,10 @@ export function formatWorkoutDate(date: Date): string {
     year: 'numeric',
   });
 }
+
+/** `Free Throws, Mikan Drill, Layups`, or the first `max` names and `+N more`. */
+export function formatExerciseList(names: readonly string[], max = 3): string {
+  if (names.length === 0) return 'No exercises';
+  if (names.length <= max) return names.join(', ');
+  return `${names.slice(0, max).join(', ')} +${names.length - max} more`;
+}

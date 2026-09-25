@@ -13,8 +13,10 @@ const MESSAGES: Record<DomainErrorReason, string> = {
   exercise_archived: 'That exercise is no longer available.',
   session_in_progress_exists: 'A workout is already in progress.',
   session_not_in_progress: 'This workout is already finished.',
-  invalid_exercise_order: 'The exercise order is out of date.',
+  session_not_finished: "This workout isn't finished yet.",
+  invalid_order: 'The order is out of date.',
   invalid_set_count: 'An exercise needs at least one set.',
+  empty_workout: 'Add at least one exercise.',
 };
 
 /** A message for the user; a `Record` over every reason, so a new reason fails `typecheck`. */

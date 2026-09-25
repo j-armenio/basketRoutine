@@ -18,8 +18,10 @@ test('every reason has a message', () => {
     'exercise_archived',
     'session_in_progress_exists',
     'session_not_in_progress',
-    'invalid_exercise_order',
+    'session_not_finished',
+    'invalid_order',
     'invalid_set_count',
+    'empty_workout',
   ] as const;
   for (const reason of reasons) expect(reasonMessage(reason)).not.toBe('');
 });

@@ -7,9 +7,9 @@ import { validateExerciseConfig, validateSet } from '@/domain/validation';
 import { asc, count, desc, eq, max } from 'drizzle-orm';
 import { sessionExercises, sessionSets, sessions } from '../schema';
 import type { Db, Session, SessionExercise, SessionSet } from '../types';
-import { assertValid, nextPosition, requireName } from './common';
+import { assertSameIds, assertValid, nextPosition, requireName } from './common';
 import { requireActiveExercise } from './exercises';
-import { getWorkoutWithExercises, requireActiveWorkout } from './workouts';
+import { getWorkoutWithExercises, replaceWorkoutExercises, requireActiveWorkout } from './workouts';
 
 export function getInProgressSession(db: Db): Session | undefined {
   return db.select().from(sessions).where(eq(sessions.status, 'in_progress')).get();
@@ -57,6 +57,51 @@ export function startEmptySession(db: Db, name: string): Session {
   });
 }
 
+/** The copy itself, with no transaction and no in-progress check: see `startSessionFromWorkout`. */
+function insertSessionFromWorkout(db: Db, workoutId: number): Session {
+  const workout = requireActiveWorkout(db, workoutId);
+  const template = getWorkoutWithExercises(db, workoutId);
+
+  const session = db
+    .insert(sessions)
+    .values({
+      workoutId,
+      name: workout.name,
+      status: 'in_progress',
+      startedAt: new Date(),
+    })
+    .returning()
+    .get();
+
+  for (const item of template?.exercises ?? []) {
+    const exercise = db
+      .insert(sessionExercises)
+      .values({
+        sessionId: session.id,
+        exerciseId: item.exerciseId,
+        position: item.position,
+        name: item.exercise.name,
+        category: item.exercise.category,
+        trackingType: item.exercise.trackingType,
+        targetMode: item.targetMode,
+      })
+      .returning()
+      .get();
+    if (item.sets.length > 0) {
+      db.insert(sessionSets)
+        .values(
+          item.sets.map((set) => ({
+            sessionExerciseId: exercise.id,
+            position: set.position,
+            targetValue: set.targetValue,
+          })),
+        )
+        .run();
+    }
+  }
+  return session;
+}
+
 /**
  * Copies the workout into a new session: its name, and for each exercise the
  * catalog name/category/trackingType plus the targetMode and template sets
@@ -65,47 +110,18 @@ export function startEmptySession(db: Db, name: string): Session {
 export function startSessionFromWorkout(db: Db, workoutId: number): Session {
   return db.transaction((tx) => {
     assertNoSessionInProgress(tx);
-    const workout = requireActiveWorkout(tx, workoutId);
-    const template = getWorkoutWithExercises(tx, workoutId);
+    return insertSessionFromWorkout(tx, workoutId);
+  });
+}
 
-    const session = tx
-      .insert(sessions)
-      .values({
-        workoutId,
-        name: workout.name,
-        status: 'in_progress',
-        startedAt: new Date(),
-      })
-      .returning()
-      .get();
-
-    for (const item of template?.exercises ?? []) {
-      const exercise = tx
-        .insert(sessionExercises)
-        .values({
-          sessionId: session.id,
-          exerciseId: item.exerciseId,
-          position: item.position,
-          name: item.exercise.name,
-          category: item.exercise.category,
-          trackingType: item.exercise.trackingType,
-          targetMode: item.targetMode,
-        })
-        .returning()
-        .get();
-      if (item.sets.length > 0) {
-        tx.insert(sessionSets)
-          .values(
-            item.sets.map((set) => ({
-              sessionExerciseId: exercise.id,
-              position: set.position,
-              targetValue: set.targetValue,
-            })),
-          )
-          .run();
-      }
-    }
-    return session;
+/**
+ * Replaces the in-progress session (if any) with a new one from the workout, in one transaction:
+ * a failed start (an archived workout) leaves the current session where it was.
+ */
+export function discardAndStartFromWorkout(db: Db, workoutId: number): Session {
+  return db.transaction((tx) => {
+    tx.delete(sessions).where(eq(sessions.status, 'in_progress')).run(); // exercises and sets cascade
+    return insertSessionFromWorkout(tx, workoutId);
   });
 }
 
@@ -186,14 +202,7 @@ export function reorderSessionExercises(db: Db, sessionId: number, orderedIds: n
       .where(eq(sessionExercises.sessionId, sessionId))
       .all()
       .map((row) => row.id);
-    const unique = new Set(orderedIds);
-    if (
-      unique.size !== orderedIds.length ||
-      orderedIds.length !== current.length ||
-      !current.every((id) => unique.has(id))
-    ) {
-      throw new DomainError('invalid_exercise_order');
-    }
+    assertSameIds(current, orderedIds);
     orderedIds.forEach((id, position) => {
       tx.update(sessionExercises).set({ position }).where(eq(sessionExercises.id, id)).run();
     });
@@ -311,6 +320,29 @@ export function finishSession(db: Db, id: number): SessionSummary {
       .run();
     const detail = getSessionDetail(tx, id);
     return summarizeSession(detail?.exercises ?? []);
+  });
+}
+
+/**
+ * Overwrites the template the finished session came from with the session's structure: the same
+ * exercises, modes and target values (empty sets too), with no logged values or notes. Doesn't
+ * touch the workout's name.
+ */
+export function overwriteWorkoutFromSession(db: Db, sessionId: number): void {
+  db.transaction((tx) => {
+    const detail = getSessionDetail(tx, sessionId);
+    if (!detail || detail.workoutId === null) throw new DomainError('not_found');
+    if (detail.status !== 'finished') throw new DomainError('session_not_finished');
+    requireActiveWorkout(tx, detail.workoutId);
+    replaceWorkoutExercises(
+      tx,
+      detail.workoutId,
+      detail.exercises.map((exercise) => ({
+        exerciseId: exercise.exerciseId,
+        targetMode: exercise.targetMode,
+        targetValues: exercise.sets.map((set) => set.targetValue),
+      })),
+    );
   });
 }
 

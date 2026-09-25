@@ -8,8 +8,10 @@ export type DataReason =
   | 'exercise_archived'
   | 'session_in_progress_exists'
   | 'session_not_in_progress'
-  | 'invalid_exercise_order'
-  | 'invalid_set_count';
+  | 'session_not_finished'
+  | 'invalid_order'
+  | 'invalid_set_count'
+  | 'empty_workout';
 
 export type DomainErrorReason = ValidationReason | DataReason;
 

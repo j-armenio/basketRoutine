@@ -4,7 +4,7 @@ import { exercises } from '@/db/schema';
 import { getInProgressSession, getSessionDetail } from '@/db/repositories/sessions';
 import { eq } from 'drizzle-orm';
 import * as actions from './actions';
-import { subscribe } from './sessionStore';
+import { subscribe, type ActionResult } from '../dataStore';
 
 jest.mock('@/db/client', () => {
   /* eslint-disable @typescript-eslint/no-require-imports */
@@ -21,7 +21,7 @@ const { db } = jest.requireMock('@/db/client') as { db: Db };
 const exerciseId = (seedKey: string) =>
   db.select().from(exercises).where(eq(exercises.seedKey, seedKey)).get()!.id;
 
-function unwrap<T>(result: actions.ActionResult<T>): T {
+function unwrap<T>(result: ActionResult<T>): T {
   if (!result.ok) throw new Error(`unexpected failure: ${result.reason}`);
   return result.value;
 }

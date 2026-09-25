@@ -1,4 +1,10 @@
-import { formatDuration, formatFgPct, formatWorkoutDate, parseCount } from './format';
+import {
+  formatDuration,
+  formatExerciseList,
+  formatFgPct,
+  formatWorkoutDate,
+  parseCount,
+} from './format';
 
 describe('formatFgPct', () => {
   test.each([
@@ -50,4 +56,22 @@ describe('formatDuration', () => {
 
 test('formatWorkoutDate uses the local date, in English', () => {
   expect(formatWorkoutDate(new Date(2026, 8, 24, 23, 30))).toBe('Thu, Sep 24, 2026');
+});
+
+describe('formatExerciseList', () => {
+  test('lists every name up to the limit', () => {
+    expect(formatExerciseList(['Free Throws'])).toBe('Free Throws');
+    expect(formatExerciseList(['Free Throws', 'Mikan Drill', 'Layups'])).toBe(
+      'Free Throws, Mikan Drill, Layups',
+    );
+  });
+
+  test('counts the ones left out', () => {
+    expect(formatExerciseList(['A', 'B', 'C', 'D', 'E'])).toBe('A, B, C +2 more');
+    expect(formatExerciseList(['A', 'B', 'C'], 2)).toBe('A, B +1 more');
+  });
+
+  test('says so when there is nothing', () => {
+    expect(formatExerciseList([])).toBe('No exercises');
+  });
 });
