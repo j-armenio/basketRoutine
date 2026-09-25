@@ -142,7 +142,7 @@ Same setup as `active-workout.test.tsx` (mocked `@/db/client` with `createTestDb
 - [x] Repository tests cover the reorders, `saveWorkout` (create, replace, rollback), `overwriteWorkoutFromSession`, and a template left unchanged by a session edited and finished.
 - [x] Flow tests cover routine create/rename/move/delete, building and saving a template through the picker, Save (with and without changes, never followed by "Discard changes?"), Cancel with unsaved changes, Start (including with a session in progress), and Finish with Keep and with Update, asserting the DB.
 - [x] On the phone (Expo Go): a routine with several workouts is built, edited and started without touching code, and the template changes only when "Update template" is chosen.
-- [ ] CI is green on `main`.
+- [x] CI is green on `main`.
 
 ## Implementation notes
 
