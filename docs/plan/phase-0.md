@@ -139,9 +139,9 @@ Nothing is installed without asking first. Tools used in this phase:
 - [x] `npx expo start` + QR code opens the app in Expo Go on the phone, in dark mode.
 - [x] `npm run lint`, `npm run format:check`, `npm run typecheck`, `npm test` and `npx expo-doctor` pass locally.
 - [x] CI is green on GitHub for the latest commit on `main`.
-- [ ] The "Build APK" workflow runs the checks, then queues a build on EAS, and the build finishes on the EAS dashboard.
-- [ ] The APK installs on the phone and opens the dark placeholder screen.
+- [x] The "Build APK" workflow runs the checks, then queues a build on EAS, and the build finishes on the EAS dashboard.
+- [x] The APK installs on the phone and opens (checked with the Phase 3 build, which replaced the placeholder screen).
 - [ ] The workflow APK installs over the step 8 APK without uninstalling.
-- [ ] Keystore backup stored outside the repo.
+- [x] Keystore backup stored outside the repo.
 
-**Status:** everything above except the APK build/install/keystore-backup items is done (commits `687028a`, `ae17cfa`). The EAS project (`@jarmenio/basket-routine`) is created and linked in `app.json`. A first `eas build` was started and canceled deliberately, to be resumed later — no build has completed yet.
+**Status:** everything above except the APK build/install/keystore-backup items is done (commits `687028a`, `ae17cfa`). The EAS project (`@jarmenio/basket-routine`) is created and linked in `app.json`. A first `eas build` was canceled deliberately; the next ones finished (build 3 on 2026-09-23, build 4 on 2026-09-25 from the workflow, with the Phase 3 code). The APK is installed and the keystore backup is stored outside the repo. Still unchecked: that a workflow APK installs over the step 8 one without uninstalling (not confirmed).

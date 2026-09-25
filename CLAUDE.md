@@ -15,14 +15,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Commands: `npm run lint`, `npm run format` / `format:check`, `npm run typecheck`, `npm test`, `npm run db:generate` (after any change to `src/db/schema.ts`), `npx expo start` (dev loop — scan the QR code with Expo Go). CI (`.github/workflows/ci.yml`) runs lint, format check, typecheck, tests, a schema/migrations-in-sync check (`db:generate` must leave `src/db/migrations` unchanged) and `npx expo-doctor` on every push and PR. An EAS project is linked (`@jarmenio/basket-routine`, ID in `app.json`'s `extra.eas.projectId`).
 
-**Migration policy:** until an APK with a DB is installed on the phone, the initial migration may be deleted and regenerated freely (clear Expo Go's data afterwards). After that, migrations are append-only.
+**Migration policy:** an APK with a DB is now installed on the phone (2026-09-25, Phase 3 build), so **migrations are append-only**: never delete or edit `0000_true_deadpool.sql`, only generate new ones. Uninstalling the APK wipes its data.
 
 Tests live next to the code (`*.test.ts` / `*.test.tsx`); DB tests use the `@jest-environment node` docblock. Repositories call `.sync()` on Drizzle relational queries and read inserted rows back with `.returning()`. Jest runs on the `jest-expo/android` preset; `jest.setup.js` swaps `ReanimatedSwipeable` for a plain view (the gesture can't run in Jest), so tests delete a row through its "delete" accessibility action. Navigation is tested with `renderRouter` from `expo-router/testing-library` in `__tests__/shell.test.tsx` (real root layout; `@/db/client` and `@/db/useDatabaseSetup` mocked). `renderRouter` pitfalls: `await` it (Testing Library v14's render is async); `getPathname()` lives on the returned Promise, not on the awaited result, so keep the Promise (`const app = renderRouter(...); await app; app.getPathname()`); it enables fake timers, so use `userEvent.setup({ advanceTimers: jest.advanceTimersByTime })`; tabs have the `tab` role and are found by their `tabBarAccessibilityLabel`.
 
-Pending from Phase 0 (see `docs/plan/phase-0.md` final checklist):
-
-- Finish an `eas build -p android --profile preview` (a first attempt was started and deliberately canceled, to resume later) and confirm the resulting APK installs and opens on the phone.
-- Back up the EAS-generated keystore outside the repo, once a build completes.
+The `preview` APK (build 4, from the "Build APK" workflow, with the Phase 3 code) is installed on the phone and the EAS keystore is backed up outside the repo. Still unconfirmed from Phase 0: that a workflow APK installs over an earlier one without uninstalling.
 
 Read `docs/plan/phase-0.md` for exactly what was done, and the plan docs below before writing code for the next phase — they are the source of truth for what to build next and in what order.
 
@@ -39,12 +36,12 @@ When planning or starting a new phase, write its `docs/plan/phase-N.md` before i
 
 ## Current status
 
-- Phase 0 done (pending: first completed `preview` APK build installed on the phone, and the keystore backup).
+- Phase 0 done (APK built and installed, keystore backed up).
 - Phase 1 done (on-phone check passed, CI green).
 - Phase 2 done (`docs/plan/phase-2.md`): on-phone check passed; CI to be confirmed green on `main` after the push.
-- Phase 3 (`docs/plan/phase-3.md`): **Part A (code) done**: on-phone check (step 11) passed in two passes, with changes from the first one's feedback (swipe to delete a set, the last set can't be deleted, hiding the keyboard leaves the field, note at the end of the card), CI green on `main`. Part B (APK, keystore, court session) pending; it can run while Phase 4 is in progress. Part B (APK, keystore, court session) not started.
+- Phase 3 (`docs/plan/phase-3.md`): **Part A (code) done**: on-phone check (step 11) passed in two passes, with changes from the first one's feedback (swipe to delete a set, the last set can't be deleted, hiding the keyboard leaves the field, note at the end of the card), CI green on `main`. Part B: APK installed and keystore backed up; the real court session and its feedback round (step 14) are pending, and can run while Phase 4 is in progress. Part B (APK, keystore, court session) not started.
 - Phase order changed after the Phase 3 phone check: Phase 4 is now Routines & Workout Templates (the main flow), then History (5) and Exercise Catalog (6). Phase 4's detailed plan isn't written yet.
-- Decision: the first `preview` APK build (which also clears the pending Phase 0 items) happens after Phase 3, not at the end of the project.
+- Decision (done): the first `preview` APK build happened after Phase 3, not at the end of the project.
 
 ## Tech stack
 

@@ -250,5 +250,5 @@ Everything runs from the APK, in airplane mode.
 
 ### Part B — APK and court session
 
-- [ ] The `preview` APK installs and works offline, and the keystore backup is stored outside the repo.
+- [x] The `preview` APK installs and works (build 4, from the "Build APK" workflow), and the keystore backup is stored outside the repo. Offline (airplane mode) use is still to be confirmed on the court session.
 - [ ] A real court session was logged end to end from the APK, and every question in step 14 is answered in this file's "Feedback" section, with the blocking bugs fixed.
