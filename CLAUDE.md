@@ -39,7 +39,7 @@ When planning or starting a new phase, write its `docs/plan/phase-N.md` before i
 - Phase 0 done (APK built and installed, keystore backed up).
 - Phase 1 done (on-phone check passed, CI green).
 - Phase 2 done (`docs/plan/phase-2.md`): on-phone check passed; CI to be confirmed green on `main` after the push.
-- Phase 3 (`docs/plan/phase-3.md`): **Part A (code) done**: on-phone check (step 11) passed in two passes, with changes from the first one's feedback (swipe to delete a set, the last set can't be deleted, hiding the keyboard leaves the field, note at the end of the card), CI green on `main`. Part B: APK installed and keystore backed up; the real court session and its feedback round (step 14) are pending, and can run while Phase 4 is in progress. Part B (APK, keystore, court session) not started.
+- Phase 3 (`docs/plan/phase-3.md`): **done**, both parts. Part A (code): on-phone check (step 11) passed in two passes, with changes from the first one's feedback (swipe to delete a set, the last set can't be deleted, hiding the keyboard leaves the field, note at the end of the card), CI green on `main`. Part B: APK installed (clean install, works offline), keystore backed up, court session logged with no bugs; the feedback is at the end of the phase file (only FG% coloring was asked for, added to Phase 7). Next: write `docs/plan/phase-4.md`. Part B (APK, keystore, court session) not started.
 - Phase order changed after the Phase 3 phone check: Phase 4 is now Routines & Workout Templates (the main flow), then History (5) and Exercise Catalog (6). Phase 4's detailed plan isn't written yet.
 - Decision (done): the first `preview` APK build happened after Phase 3, not at the end of the project.
 

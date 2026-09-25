@@ -250,5 +250,29 @@ Everything runs from the APK, in airplane mode.
 
 ### Part B — APK and court session
 
-- [x] The `preview` APK installs and works (build 4, from the "Build APK" workflow), and the keystore backup is stored outside the repo. Offline (airplane mode) use is still to be confirmed on the court session.
-- [ ] A real court session was logged end to end from the APK, and every question in step 14 is answered in this file's "Feedback" section, with the blocking bugs fixed.
+- [x] The `preview` APK installs and works (build 4, from the "Build APK" workflow), and the keystore backup is stored outside the repo. A clean install (not over an earlier APK) was confirmed to work offline.
+- [x] A real court session was logged end to end from the APK, and every question in step 14 is answered in this file's "Feedback" section, with the blocking bugs fixed (there were none).
+
+## Feedback
+
+The session was logged from the `preview` APK (EAS build 4, clean install, airplane mode). The developer's answers, in the order of step 14.
+
+**Functional check:** every item worked, including the *(home)* paths. No bugs, so no fix-up commits were needed.
+
+**Usability feedback**
+
+| Question | Answer |
+|---|---|
+| Are the default targets (10 / 5) right? | Yes. |
+| Are the column labels clear in both modes? Are the two mode options in the picker clear? | Yes. |
+| Are the inputs big enough to hit and read at arm's length, between reps? | Yes. |
+| Is swipe to delete easy to do on purpose, and hard to trigger by accident? | Yes. |
+| Should empty sets be dropped on finish? | No: keep the current behavior (they stay in the DB and are left out of every summary). |
+| Is the finish confirmation needed? | Keep the current behavior. |
+| Should focus jump to the next set after "done"? | No. After "done" the field should end up unfocused, as it does now. |
+| Is a live timer or FG% coloring missed? | FG% coloring would be nice. No timer. |
+| Was anything missing that forced a paper note or another app? | No. |
+
+**What goes where**
+- FG% coloring (success/danger by FG%, on set rows, exercise totals and the summary) → added to Phase 7 (polish) in `PLAN.md`. The thresholds are still to be decided then.
+- Nothing else changes: the rest of the answers confirm the current behavior.

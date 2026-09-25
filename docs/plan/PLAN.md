@@ -104,7 +104,7 @@ Phases are ordered so a usable prototype (empty workout logged on the court) exi
 
 ### Phase 7 — Polish, Testing & Release
 - E2E tests of the main flow (create routine → start → log → finish → history).
-- UX polish: empty states, haptics, accessibility labels, app icon and splash.
+- UX polish: empty states, haptics, accessibility labels, app icon and splash, and FG% coloring (success/danger by FG% on set rows, totals and the summary; asked for after the first court session).
 - Performance check on the target phone during a long session.
 - Release APK installed on the phone.
 - **Done when:** v1.0 APK is installed and used in a real training session.
