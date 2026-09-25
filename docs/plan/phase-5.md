@@ -106,7 +106,7 @@ Templates (Phase 4) and history are now worth having on the court. Neither phase
 - [x] Repository tests cover the list, `deleteFinishedSession`, `finishSession` refusing a session with no exercise, and a finished session refusing edits.
 - [x] Flow tests cover the list, the detail, delete (confirmed and cancelled) and the focus gate, asserting the DB.
 - [x] On the phone (Expo Go): past sessions are browsable, their detail matches what was logged, and one can be deleted.
-- [ ] CI is green on `main`.
+- [x] CI is green on `main`.
 
 ### Part B — APK
 
