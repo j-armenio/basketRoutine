@@ -5,6 +5,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { Screen } from '@/components/Screen';
 import { formatDuration, formatFgPct, formatWorkoutDate } from '@/domain/format';
 import { summarizeExercise, summarizeSession } from '@/domain/summary';
+import { SessionTotals } from '@/features/history/SessionTotals';
 import { useSessionDetail } from '@/features/workout/hooks';
 import { spacing } from '@/theme/spacing';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -38,24 +39,7 @@ export default function WorkoutSummaryScreen() {
       subtitle={`${formatWorkoutDate(detail.startedAt)} · ${formatDuration(duration)}`}
       bottomInset
     >
-      {summary.shooting.attempts > 0 && (
-        <Card>
-          <AppText variant="heading">Shooting</AppText>
-          <AppText variant="number">{formatFgPct(summary.shooting.fgPct)}</AppText>
-          <AppText tone="muted">
-            {summary.shooting.makes} makes / {summary.shooting.attempts} attempts
-          </AppText>
-        </Card>
-      )}
-      {summary.check.total > 0 && (
-        <Card>
-          <AppText variant="heading">Checks</AppText>
-          <AppText variant="number">
-            {summary.check.completed} / {summary.check.total}
-          </AppText>
-          <AppText tone="muted">completed</AppText>
-        </Card>
-      )}
+      <SessionTotals summary={summary} />
       <Card>
         <AppText variant="heading">Exercises</AppText>
         {detail.exercises.length === 0 && <AppText tone="muted">No exercises.</AppText>}

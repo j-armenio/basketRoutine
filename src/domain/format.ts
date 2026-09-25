@@ -36,6 +36,11 @@ export function formatWorkoutDate(date: Date): string {
   });
 }
 
+/** `September 2026`, the History list's month headers. */
+export function formatMonth(date: Date): string {
+  return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
+
 /** `Free Throws, Mikan Drill, Layups`, or the first `max` names and `+N more`. */
 export function formatExerciseList(names: readonly string[], max = 3): string {
   if (names.length === 0) return 'No exercises';

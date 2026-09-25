@@ -1,9 +1,5 @@
 import { db } from '@/db/client';
-import {
-  getInProgressSession,
-  getSessionDetail,
-  listFinishedSessions,
-} from '@/db/repositories/sessions';
+import { getInProgressSession, getSessionDetail } from '@/db/repositories/sessions';
 import { useMemo } from 'react';
 import { useDataVersion } from '../dataStore';
 
@@ -25,14 +21,6 @@ export function useSessionDetail(id: number | undefined) {
     void version; // re-read after any write
     return id === undefined ? undefined : getSessionDetail(db, id);
   }, [id, version]);
-}
-
-export function useFinishedSessionCount(): number {
-  const version = useDataVersion();
-  return useMemo(() => {
-    void version; // re-read after any write
-    return listFinishedSessions(db).length;
-  }, [version]);
 }
 
 export type SessionDetail = NonNullable<ReturnType<typeof getSessionDetail>>;

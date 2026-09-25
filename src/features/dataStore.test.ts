@@ -1,5 +1,12 @@
 import { DomainError } from '@/domain/errors';
-import { getDataVersion, notifyDataChanged, run, subscribe } from './dataStore';
+import { act, renderHook } from '@testing-library/react-native';
+import {
+  getDataVersion,
+  notifyDataChanged,
+  run,
+  subscribe,
+  useDataVersionWhile,
+} from './dataStore';
 
 test('notifies subscribers and bumps the version', () => {
   const listener = jest.fn();
@@ -54,5 +61,64 @@ describe('run', () => {
         throw bug;
       }),
     ).toThrow(bug);
+  });
+});
+
+describe('useDataVersionWhile', () => {
+  async function render(initialActive: boolean) {
+    const renders = jest.fn();
+    const hook = await renderHook<number, { active: boolean }>(
+      ({ active }) => {
+        renders();
+        return useDataVersionWhile(active);
+      },
+      { initialProps: { active: initialActive } },
+    );
+    return { ...hook, renders };
+  }
+
+  test('follows every bump while active', async () => {
+    const { result } = await render(true);
+    const start = getDataVersion();
+    expect(result.current).toBe(start);
+
+    await act(async () => notifyDataChanged());
+    await act(async () => notifyDataChanged());
+
+    expect(result.current).toBe(start + 2);
+  });
+
+  test('while inactive, a bump neither changes the value nor re-renders', async () => {
+    const { result, rerender, renders } = await render(true);
+    const seen = result.current;
+    await rerender({ active: false });
+    const rendersBefore = renders.mock.calls.length;
+
+    await act(async () => notifyDataChanged());
+    await act(async () => notifyDataChanged());
+
+    expect(result.current).toBe(seen);
+    expect(renders.mock.calls.length).toBe(rendersBefore);
+  });
+
+  test('becoming active catches up to the current version', async () => {
+    const { result, rerender } = await render(true);
+    const seen = result.current;
+    await rerender({ active: false });
+    await act(async () => notifyDataChanged());
+    expect(result.current).toBe(seen);
+
+    await rerender({ active: true });
+    expect(result.current).toBe(getDataVersion());
+
+    await act(async () => notifyDataChanged());
+    expect(result.current).toBe(getDataVersion());
+  });
+
+  test('starting inactive holds the version it mounted with', async () => {
+    const { result } = await render(false);
+    const seen = result.current;
+    await act(async () => notifyDataChanged());
+    expect(result.current).toBe(seen);
   });
 });

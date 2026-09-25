@@ -2,6 +2,7 @@ import {
   formatDuration,
   formatExerciseList,
   formatFgPct,
+  formatMonth,
   formatWorkoutDate,
   parseCount,
 } from './format';
@@ -56,6 +57,11 @@ describe('formatDuration', () => {
 
 test('formatWorkoutDate uses the local date, in English', () => {
   expect(formatWorkoutDate(new Date(2026, 8, 24, 23, 30))).toBe('Thu, Sep 24, 2026');
+});
+
+test('formatMonth uses the local month and year, in English', () => {
+  expect(formatMonth(new Date(2026, 8, 24, 23, 30))).toBe('September 2026');
+  expect(formatMonth(new Date(2027, 0, 1, 0, 5))).toBe('January 2027');
 });
 
 describe('formatExerciseList', () => {

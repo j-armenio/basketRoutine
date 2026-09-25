@@ -53,7 +53,7 @@ This is a high-level plan. Each phase gets its own detailed plan before developm
    - The user logs each set right after performing it.
 3. **Finish** → summary (total makes, attempts, overall FG% for shooting exercises; completed count for check exercises) → saved to History. Option to **overwrite** the template with the session's structure.
 4. **Exercises tab** → catalog by category, search, exercise detail (description + media), create custom exercise.
-5. **History tab** → past sessions list and detail.
+5. **History tab** → past sessions list and read-only detail.
 
 ## 4. Milestones
 
@@ -94,8 +94,8 @@ Phases are ordered so a usable prototype (empty workout logged on the court) exi
 
 ### Phase 5 — History
 - List of finished sessions (date, workout name, duration, overall FG%).
-- Session detail with per-exercise sets, FG% and notes; edit or delete a past session.
-- **Done when:** past sessions are browsable and editable.
+- Session detail (read-only): the workout's summary and every exercise with its sets, FG% and notes, as they were when it was finished. A past session can be deleted, not edited.
+- **Done when:** past sessions are browsable and can be deleted.
 
 ### Phase 6 — Exercise Catalog
 - Browse by category, search, exercise detail with description and GIF/video preview (text fallback).

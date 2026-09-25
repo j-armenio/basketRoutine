@@ -1,5 +1,5 @@
 import { DomainError, type DomainErrorReason } from '@/domain/errors';
-import { useSyncExternalStore } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 
 // A version counter over the app's data. Every write bumps it, and the hooks re-read the DB when
 // it changes, so the screens stay in sync with no focus listeners or prop drilling. One counter
@@ -25,6 +25,26 @@ export function getDataVersion(): number {
 
 export function useDataVersion(): number {
   return useSyncExternalStore(subscribe, getDataVersion, getDataVersion);
+}
+
+const neverNotified = () => () => {};
+
+/**
+ * `useDataVersion` that only follows the store while `active`: an inactive screen (an unfocused
+ * tab) neither subscribes nor re-renders on a bump, and returns the last version it saw while
+ * active. Becoming active catches up to the current version. For a screen whose read is costly
+ * and that stays mounted (the History list). The last version is kept with React's "adjust state
+ * during render" pattern, so it needs no ref read and no effect.
+ */
+export function useDataVersionWhile(active: boolean): number {
+  const current = useSyncExternalStore(
+    active ? subscribe : neverNotified,
+    getDataVersion,
+    getDataVersion,
+  );
+  const [lastActive, setLastActive] = useState(current);
+  if (active && lastActive !== current) setLastActive(current);
+  return active ? current : lastActive;
 }
 
 export type ActionResult<T> = { ok: true; value: T } | { ok: false; reason: DomainErrorReason };

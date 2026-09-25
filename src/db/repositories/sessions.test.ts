@@ -1,7 +1,7 @@
 /** @jest-environment node */
 import { DomainError } from '@/domain/errors';
 import { count, eq } from 'drizzle-orm';
-import { exercises, sessionExercises, sessionSets } from '../schema';
+import { exercises, sessionExercises, sessionSets, sessions } from '../schema';
 import { seedExercises } from '../seed/seed';
 import { createTestDb } from '../test-utils';
 import type { Db } from '../types';
@@ -12,11 +12,12 @@ import {
   addSessionSet,
   deleteSessionSet,
   discardAndStartFromWorkout,
+  deleteFinishedSession,
   discardSession,
   finishSession,
   getInProgressSession,
   getSessionDetail,
-  listFinishedSessions,
+  listFinishedSessionsWithExercises,
   overwriteWorkoutFromSession,
   removeSessionExercise,
   reorderSessionExercises,
@@ -389,29 +390,36 @@ describe('finishing and discarding', () => {
     expect(summary.shooting).toEqual({ makes: 12, attempts: 18, fgPct: 12 / 18 });
     expect(summary.check).toEqual({ completed: 1, total: 2 });
 
-    const finished = listFinishedSessions(db);
+    const finished = listFinishedSessionsWithExercises(db);
     expect(finished).toHaveLength(1);
     expect(finished[0]).toMatchObject({ id: session.id, status: 'finished' });
     expect(finished[0].finishedAt).toBeInstanceOf(Date);
     expect(getInProgressSession(db)).toBeUndefined();
   });
 
-  test('a finished session frees the in-progress slot; finished list is newest first', () => {
+  test('a finished session frees the in-progress slot', () => {
     const { db } = setup();
     const first = startEmptySession(db, 'First');
+    addSessionExercise(db, first.id, exerciseId(db, 'figure_8'));
     finishSession(db, first.id);
-    const second = startEmptySession(db, 'Second');
-    finishSession(db, second.id);
-    expect(listFinishedSessions(db).map((s) => s.name)).toEqual(['Second', 'First']);
+
+    expect(getInProgressSession(db)).toBeUndefined();
+    expect(startEmptySession(db, 'Second')).toMatchObject({ status: 'in_progress' });
   });
 
-  test('an empty session finishes with an empty summary', () => {
-    const { db } = setup();
-    const session = startEmptySession(db, 'S');
-    expect(finishSession(db, session.id)).toEqual({
-      shooting: { makes: 0, attempts: 0, fgPct: null },
-      check: { completed: 0, total: 0 },
-    });
+  test('a session with no exercise cannot be finished, and stays in progress', () => {
+    const { db, workout } = setup();
+    const never = startEmptySession(db, 'Never had one');
+    expect(reasonOf(() => finishSession(db, never.id))).toBe('empty_workout');
+    expect(getInProgressSession(db)?.id).toBe(never.id);
+    discardSession(db, never.id);
+
+    const emptied = startSessionFromWorkout(db, workout.id);
+    for (const exercise of detailOf(db, emptied.id).exercises) {
+      removeSessionExercise(db, exercise.id);
+    }
+    expect(reasonOf(() => finishSession(db, emptied.id))).toBe('empty_workout');
+    expect(detailOf(db, emptied.id)).toMatchObject({ status: 'in_progress', finishedAt: null });
   });
 
   test('discarding removes the session and its exercises and sets', () => {
@@ -425,6 +433,76 @@ describe('finishing and discarding', () => {
     const setRows = db.select({ n: count() }).from(sessionSets).get()!.n;
     expect([exerciseRows, setRows]).toEqual([0, 0]);
     expect(reasonOf(() => discardSession(db, session.id))).toBe('not_found');
+  });
+});
+
+describe('history', () => {
+  /** A finished session with fixed dates: `day` of September 2026, `minutes` long. */
+  function finished(db: Db, name: string, day: number, minutes: number) {
+    const session = startEmptySession(db, name);
+    addSessionExercise(db, session.id, exerciseId(db, 'free_throws'), 'attempts');
+    addSessionExercise(db, session.id, exerciseId(db, 'figure_8'));
+    const startedAt = new Date(2026, 8, day, 10, 0);
+    finishSession(db, session.id);
+    db.update(sessions)
+      .set({ startedAt, finishedAt: new Date(startedAt.getTime() + minutes * 60_000) })
+      .where(eq(sessions.id, session.id))
+      .run();
+    return session;
+  }
+
+  test('the list holds only finished sessions, newest start first, with ordered exercises and sets', () => {
+    const { db } = setup();
+    const older = finished(db, 'Older', 3, 30);
+    const newer = finished(db, 'Newer', 20, 45);
+    const running = startEmptySession(db, 'Running');
+    addSessionExercise(db, running.id, exerciseId(db, 'crossover'));
+    const [shooting] = detailOf(db, newer.id).exercises;
+    // the sets must come back in position order even when their ids don't
+    db.update(sessionSets)
+      .set({ position: 1 })
+      .where(eq(sessionSets.id, shooting.sets[0].id))
+      .run();
+    db.insert(sessionSets)
+      .values({ sessionExerciseId: shooting.id, position: 0, targetValue: 7 })
+      .run();
+
+    const list = listFinishedSessionsWithExercises(db);
+
+    expect(list.map((s) => s.id)).toEqual([newer.id, older.id]);
+    expect(list[0].exercises.map((e) => e.name)).toEqual(['Free Throws', 'Figure 8']);
+    expect(list[0].exercises[0].sets.map((s) => s.targetValue)).toEqual([7, 10]);
+    expect(list[0].finishedAt!.getTime() - list[0].startedAt.getTime()).toBe(45 * 60_000);
+  });
+
+  test('deleteFinishedSession removes the session with its exercises and sets, nothing else', () => {
+    const { db, workout } = setup();
+    const fromTemplate = startSessionFromWorkout(db, workout.id);
+    finishSession(db, fromTemplate.id);
+    const other = finished(db, 'Other', 5, 20);
+    const templateBefore = getWorkoutWithExercises(db, workout.id);
+    const otherBefore = detailOf(db, other.id);
+
+    deleteFinishedSession(db, fromTemplate.id);
+
+    expect(getSessionDetail(db, fromTemplate.id)).toBeUndefined();
+    expect(listFinishedSessionsWithExercises(db).map((s) => s.id)).toEqual([other.id]);
+    expect(getWorkoutWithExercises(db, workout.id)).toEqual(templateBefore);
+    expect(detailOf(db, other.id)).toEqual(otherBefore);
+    const rows = {
+      exercises: db.select({ n: count() }).from(sessionExercises).get()!.n,
+      sets: db.select({ n: count() }).from(sessionSets).get()!.n,
+    };
+    expect(rows).toEqual({ exercises: otherBefore.exercises.length, sets: 2 });
+  });
+
+  test('deleteFinishedSession refuses an in-progress or unknown session', () => {
+    const { db } = setup();
+    const running = startEmptySession(db, 'Running');
+
+    expect(reasonOf(() => deleteFinishedSession(db, running.id))).toBe('session_not_finished');
+    expect(reasonOf(() => deleteFinishedSession(db, 999))).toBe('not_found');
+    expect(getInProgressSession(db)?.id).toBe(running.id);
   });
 });
 
@@ -505,6 +583,7 @@ describe('templates and sessions', () => {
     finishSession(db, running.id);
 
     const empty = startEmptySession(db, 'Quick');
+    addSessionExercise(db, empty.id, exerciseId(db, 'figure_8'));
     finishSession(db, empty.id);
     expect(reasonOf(() => overwriteWorkoutFromSession(db, empty.id))).toBe('not_found');
     expect(reasonOf(() => overwriteWorkoutFromSession(db, 999))).toBe('not_found');
@@ -519,7 +598,8 @@ describe('templates and sessions', () => {
     for (const exercise of detailOf(db, session.id).exercises) {
       removeSessionExercise(db, exercise.id);
     }
-    finishSession(db, session.id);
+    // finishSession refuses this state, so the status is set directly: the check stays as a net
+    db.update(sessions).set({ status: 'finished', finishedAt: new Date() }).run();
     const before = getWorkoutWithExercises(db, workout.id);
 
     expect(reasonOf(() => overwriteWorkoutFromSession(db, session.id))).toBe('empty_workout');

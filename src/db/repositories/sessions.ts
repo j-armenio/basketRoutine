@@ -314,6 +314,7 @@ export function updateSessionSet(db: Db, setId: number, patch: SessionSetPatch):
 export function finishSession(db: Db, id: number): SessionSummary {
   return db.transaction((tx) => {
     requireInProgressSession(tx, id);
+    if (!getSessionDetail(tx, id)?.exercises.length) throw new DomainError('empty_workout');
     tx.update(sessions)
       .set({ status: 'finished', finishedAt: new Date() })
       .where(eq(sessions.id, id))
@@ -352,12 +353,37 @@ export function discardSession(db: Db, id: number): void {
   db.delete(sessions).where(eq(sessions.id, id)).run();
 }
 
-/** Newest first. */
-export function listFinishedSessions(db: Db): Session[] {
-  return db
-    .select()
-    .from(sessions)
-    .where(eq(sessions.status, 'finished'))
-    .orderBy(desc(sessions.finishedAt), desc(sessions.id))
-    .all();
+/**
+ * The finished sessions with their exercises and sets, all ordered, for the History list. Newest
+ * `startedAt` first (like the month grouping), then id.
+ */
+export function listFinishedSessionsWithExercises(db: Db) {
+  return db.query.sessions
+    .findMany({
+      where: eq(sessions.status, 'finished'),
+      orderBy: [desc(sessions.startedAt), desc(sessions.id)],
+      with: {
+        exercises: {
+          orderBy: [asc(sessionExercises.position), asc(sessionExercises.id)],
+          with: {
+            sets: { orderBy: [asc(sessionSets.position), asc(sessionSets.id)] },
+          },
+        },
+      },
+    })
+    .sync();
+}
+
+/**
+ * Hard-deletes a finished session (its exercises and sets cascade). History is read-only, so this
+ * is the only way to change it; the template it came from is untouched. An in-progress session
+ * is discarded from the active workout instead.
+ */
+export function deleteFinishedSession(db: Db, id: number): void {
+  db.transaction((tx) => {
+    const session = tx.select().from(sessions).where(eq(sessions.id, id)).get();
+    if (!session) throw new DomainError('not_found');
+    if (session.status !== 'finished') throw new DomainError('session_not_finished');
+    tx.delete(sessions).where(eq(sessions.id, id)).run();
+  });
 }
