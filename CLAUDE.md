@@ -34,7 +34,6 @@ Basket Routine: an Android-only, personal-use app (sideloaded APK, no Play Store
 ## Planning docs
 
 - `docs/plan/PLAN.md` — high-level plan: tech stack, domain model, main user flow, milestones (Phase 0–7), risks. Kept free of deep technical detail by design.
-- `docs/backlog.md` — **the only place for work left for later** (known issues, polish, deferred features, post-v1 ideas). Phase 7 is built from its "Phase 7" section. Nothing else (plan docs, phase docs, this file, code comments) carries to-dos: they point to `docs/backlog.md`. Read it only when planning a phase or when asked about pending work.
 - `docs/plan/phase-N.md` — one detailed plan per phase, written just before that phase starts (`phase-0.md` to `phase-6.md` done). Contains the concrete decisions, steps, and a "done when" checklist for that phase.
 
 When planning or starting a new phase, write its `docs/plan/phase-N.md` before implementing, following the level of detail in `phase-0.md`.
@@ -44,10 +43,10 @@ When planning or starting a new phase, write its `docs/plan/phase-N.md` before i
 - Phase 0 done (APK built and installed, keystore backed up).
 - Phase 1 done (on-phone check passed, CI green).
 - Phase 2 done (`docs/plan/phase-2.md`): on-phone check passed, CI green.
-- Phase 3 (`docs/plan/phase-3.md`): **done**, both parts. Part A (code): on-phone check (step 11) passed in two passes, with changes from the first one's feedback (swipe to delete a set, the last set can't be deleted, hiding the keyboard leaves the field, note at the end of the card), CI green on `main`. Part B: APK installed (clean install, works offline), keystore backed up, court session logged with no bugs; the feedback is at the end of the phase file (the one ask, FG% coloring, is in `docs/backlog.md`).
+- Phase 3 (`docs/plan/phase-3.md`): **done**, both parts. Part A (code): on-phone check (step 11) passed in two passes, with changes from the first one's feedback (swipe to delete a set, the last set can't be deleted, hiding the keyboard leaves the field, note at the end of the card), CI green on `main`. Part B: APK installed (clean install, works offline), keystore backed up, court session logged with no bugs; the feedback is at the end of the phase file (only FG% coloring was asked for, added to Phase 7).
 - Phase order changed after the Phase 3 phone check: Phase 4 is now Routines & Workout Templates (the main flow), then History (5) and Exercise Catalog (6). Phase 4 (`docs/plan/phase-4.md`: template editor as an in-memory draft with Save/Cancel, "Update template?" asked at Finish only when the structure changed, routines as sections on the Workout tab, no schema change, no APK this phase); **done**: on-phone check passed (one fix from it: swiping a set row now also starts on its number field, see the phase file's "Results"), all CI checks pass locally (309 tests, no migration), CI green on `main`.
 - Phase 5 (`docs/plan/phase-5.md`: read-only History, the list grouped by month, the detail, delete, no schema change): **done**, both parts. Part A: on-phone check passed, CI green on `main`. Part B: the Phase 5 APK installed over build 4 without uninstalling, keeping the data (2026-09-28).
-- Phase 6 (`docs/plan/phase-6.md`: exercise catalog, no schema change): first on-phone check done, its feedback applied (media picked from the gallery and shown in the list, Duplicate removed; `expo-image-picker`, `expo-file-system`, `expo-video`, `expo-image` installed with approval); all CI checks pass locally (443 tests, no migration, `expo-doctor` clean). On-phone check passed (three passes; the last added a Custom filter chip). Committed as `12a5ab9`. Left: push and confirm CI is green on `main`. Next: write `docs/plan/phase-7.md` from `docs/backlog.md`'s "Phase 7" section.
+- Phase 6 (`docs/plan/phase-6.md`: exercise catalog, no schema change): **done**. First on-phone check done, its feedback applied (media picked from the gallery and shown in the list, Duplicate removed; `expo-image-picker`, `expo-file-system`, `expo-video`, `expo-image` installed with approval); all CI checks pass locally (443 tests, no migration, `expo-doctor` clean). On-phone check passed (three passes; the last added a Custom filter chip). CI green on `main`. Next: write `docs/plan/phase-7.md`.
 - Decision (done): the first `preview` APK build happened after Phase 3, not at the end of the project.
 
 ## Tech stack
@@ -78,4 +77,3 @@ Android application ID is `com.jarmenio.basketroutine` — treat this as immutab
 - One commit per phase, made when the phase's work is done — not per internal step. Fix-up commits are fine afterward if CI or a build fails.
 - Nothing gets installed (global tools, SDKs, version managers) without asking first and explaining what it's for.
 - UI and code are in English throughout, regardless of the developer's own language.
-- Anything deferred (a known issue, feedback left for later, an idea) is written in `docs/backlog.md` only, with where it came from; a phase doc or this file may point there but doesn't repeat it.

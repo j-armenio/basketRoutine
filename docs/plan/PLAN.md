@@ -24,7 +24,7 @@ This is a high-level plan. Each phase gets its own detailed plan before developm
 - **Exercise (catalog)** — name, category, text description, optional main media (image, GIF or short video, picked from the phone and stored with the app; predefined ones ship with the app), `isCustom` flag, **`trackingType`**:
   - `makes_attempts` — shooting drills, FG% applies.
   - `check` — non-shooting drills (ball handling, footwork…), set is just marked done.
-  - More types (reps, time): see `docs/backlog.md`.
+  - Extensible later (reps, time).
   - Categories: Finishing, Ball Handling, Dribbling, Shooting, Footwork (extensible).
 - **Workout exercise** — an exercise inside a template. For `makes_attempts` it has one **`targetMode`** that applies to all its sets:
   - `makes` = fixed makes → the user logs how many **attempts** it took.
@@ -103,17 +103,16 @@ Phases are ordered so a usable prototype (empty workout logged on the court) exi
 - **Done when:** user can find any exercise and create a custom one.
 
 ### Phase 7 — Polish, Testing & Release
-- The items of the "Phase 7" section of [`docs/backlog.md`](../backlog.md): polish, tests, performance, known issues.
+- E2E tests of the main flow (create routine → start → log → finish → history).
+- UX polish: empty states, haptics, accessibility labels, app icon and splash, and FG% coloring (success/danger by FG% on set rows, totals and the summary; asked for after the first court session).
+- Performance check on the target phone during a long session.
 - Release APK installed on the phone.
 - **Done when:** v1.0 APK is installed and used in a real training session.
 
-## 5. Backlog
-Everything left for later (post-v1 ideas included) lives in [`docs/backlog.md`](../backlog.md), and only there.
-
-## 6. Risks & Mitigations
+## 5. Risks & Mitigations
 - **Data loss on the court** → every input saved immediately; interrupted sessions can be resumed.
 - **Data lost on uninstall** (no manual backup in v1) → accepted trade-off. Android Auto Backup stays at its default (enabled) as a best-effort safety net; no work is spent on it.
 - **No internet in the gym** → media is stored on the phone (or ships with the app), never loaded from the web; a placeholder when an exercise has none.
 - **Set logging awkward on the court** → validated early with the Phase 3 prototype (on the phone before templates are built, and on the court while they are).
 - **Broken history after deletes** → session snapshots + archiving instead of hard deletes.
-- **Scope creep** → post-v1 items of `docs/backlog.md` only after Phase 7.
+- **Scope creep** → nothing beyond the planned phases until Phase 7 is done.

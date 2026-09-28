@@ -24,7 +24,8 @@ Detailed plan for Phase 0 of [PLAN.md](PLAN.md).
 
 - Bottom tabs, theme tokens, base components → Phase 2.
 - SQLite / Drizzle, domain logic → Phase 1.
-- Final app icon and splash art, E2E tests and the `production` build profile → `docs/backlog.md`.
+- Final app icon and splash art → Phase 7.
+- E2E tests and `production` build profile → Phase 7.
 
 ## Prerequisites
 
@@ -63,7 +64,7 @@ Nothing is installed without asking first. Tools used in this phase:
 - `userInterfaceStyle: "dark"`, so the app is always dark and ignores the system theme. On Android this requires `expo-system-ui`.
 - Dark background for the splash screen (in the `expo-splash-screen` plugin config) and the Android root view (`backgroundColor`, also through `expo-system-ui`), so the app doesn't flash white on launch.
 - Keep Android Auto Backup at its default; nothing to configure (see PLAN risks).
-- Keep the template's placeholder icon (the real one: `docs/backlog.md`).
+- Keep the template's placeholder icon; the real icon comes in Phase 7.
 
 ### 3. Project structure and TypeScript
 - `app/` holds routes only (Expo Router). Everything else goes in `src/` (`src/theme`, and later `src/db`, `src/domain`, `src/components`).

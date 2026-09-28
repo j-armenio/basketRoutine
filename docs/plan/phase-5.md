@@ -24,9 +24,11 @@ Detailed plan for Phase 5 of [PLAN.md](PLAN.md).
 ## Out of scope (belongs to later phases)
 
 - Editing a past session in any way (name, duration, values, sets, exercises, notes). Also logging a past workout from scratch, "Start again" or "Save as template" from a past session.
-- Search, filters, stats or charts over the history, the "Previous" column in the active workout, FG% coloring in the list and the detail → `docs/backlog.md`.
+- Search, filters, stats or charts over the history → backlog ("FG% progress charts").
+- The "Previous" column in the active workout → backlog.
+- FG% coloring in the list and the detail → Phase 7 (with the rest of the coloring).
 - Custom exercises and catalog browsing → Phase 6.
-- A performance check on a long history (hundreds of sessions) → `docs/backlog.md`.
+- A performance check on a long history (hundreds of sessions) → Phase 7's performance check.
 
 ## Tools
 

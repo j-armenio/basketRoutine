@@ -29,7 +29,7 @@ The phase closes in two parts, so an EAS problem can't hold up the code:
 | Session name | An empty workout is named after the time of day it starts, like Hevy: "Morning Workout" (before 12:00), "Afternoon Workout" (before 18:00), "Evening Workout" (`defaultWorkoutName(date)` in `src/domain`). Renaming is Phase 5 (editing past sessions). |
 | Resume banner | Rendered above the tab bar on every tab, through the `Tabs` `tabBar` prop: the `ResumeBanner`, then the default `BottomTabBar` (both `Tabs` and `BottomTabBar` imported from `expo-router/js-tabs`, since the root `Tabs` export is deprecated). `tabBarHideOnKeyboard` only hides the `BottomTabBar`, so the banner stays up while the keyboard is open. There are no inputs on the tabs in this phase, but Phase 6's catalog search will hit this (hide the banner on keyboard there). It shows "Workout in progress" + the session name. Tapping the banner opens the active workout. Its "Discard" (danger text) asks for confirmation first. It's hidden when no session is in progress. On the Workout tab, the Quick Start button reads "Resume Workout" instead of "Start Empty Workout" while a session is in progress. On launch, the app opens on the tabs with the banner, not straight into the workout (Hevy's behavior). |
 | Keyboard | `keyboardType="number-pad"`, `selectTextOnFocus` (typing replaces the value), `returnKeyType="done"`. The active workout's scroll view uses `keyboardShouldPersistTaps="handled"`, so "Add Set" works on the first tap while the keyboard is open (the input keeps focus, but its last valid value is already saved). `Screen` wraps its `ScrollView` in a `KeyboardAvoidingView` (`behavior="padding"`) when `keyboardAvoiding` is set, so the focused input in the last card stays above the keyboard. A `KeyboardAvoidingView` placed inside the scroll view would do nothing. The app is edge-to-edge, so Android's own resize can't be relied on. **Hiding the keyboard leaves the field** (added after step 11): Android's back button hides the keyboard but keeps the input focused, so the root layout blurs the focused input on `keyboardDidHide` (`useBlurOnKeyboardHide`, for every input: number cells roll back an invalid entry, the note closes its editor). This gets checked on the phone (step 11). If it doesn't hold up, the fallback is `react-native-keyboard-controller` (works in Expo Go), asked about before installing. |
-| No live timer | Session and rest timers: `docs/backlog.md`. The summary shows the duration, computed once. |
+| No live timer | Session and rest timers are backlog. The summary shows the duration, computed once. |
 | Where the court test runs | From the `preview` APK, not Expo Go. Expo Go loads the bundle from the laptop's dev server, which isn't at the court. This is the "first APK after Phase 3" decision from `CLAUDE.md`. It also clears the pending Phase 0 items (build, install, keystore backup). **From that install on, migrations are append-only** (migration policy). |
 
 ## Out of scope (belongs to later phases)
@@ -37,7 +37,8 @@ The phase closes in two parts, so an EAS problem can't hold up the code:
 - Starting from a template, "overwrite template" on Finish, routines on the Workout tab → Phase 4 (moved up from Phase 6 after the phone check: it's the app's main flow). `startSessionFromWorkout` already exists but gets no UI yet.
 - History list and session detail, editing, deleting or renaming a finished session → Phase 5. The History placeholder only gains a count of finished sessions, as proof they're saved.
 - Catalog browsing by category, exercise detail, custom exercises → Phase 6. The picker is a plain searchable list.
-- Timers, the "Previous" column, drag & drop, FG% charts, haptics, FG% coloring, accessibility pass, performance check on a long session → `docs/backlog.md`.
+- Timers, the "Previous" column, drag & drop, FG% charts → backlog.
+- Haptics, FG% coloring, accessibility pass, performance check on a long session → Phase 7 (or earlier if the feedback round asks for it).
 - Multi-select in the picker (add several exercises at once).
 
 ## Tools
@@ -101,7 +102,7 @@ One file each, with a `*.test.tsx` where there's behavior.
 - Both rows are wrapped in `SwipeToDelete`.
 - `CheckSetRow`: set number + ✓ toggle (`accessibilityRole="checkbox"`, `accessibilityState={{ checked }}`).
 - `ExerciseCard`: header with name, mode subtitle and ⋮ menu; the table header for its tracking type; the rows; the exercise total under the table (shooting only); "Add Set" (`ghost`); the note last (`ExerciseNote`, placeholder "Add a note"). At rest the note shows at most two lines ending in "…"; tapping it opens a `TextField` that grows up to four lines and then scrolls (both from the step 11 feedback).
-- Saving on every keystroke means one write and one re-read of the session per keystroke, well under a millisecond each at this size. `React.memo` on the card wouldn't help: `getSessionDetail` returns new objects on every read. The long-session performance check is in `docs/backlog.md`.
+- Saving on every keystroke means one write and one re-read of the session per keystroke, well under a millisecond each at this size. `React.memo` on the card wouldn't help: `getSessionDetail` returns new objects on every read. If a long session ever lags, the fix is a per-card read. The long-session performance check is Phase 7.
 
 ### 6. Active workout screen (`app/active-workout.tsx`)
 - Registered on the root `Stack` in `app/_layout.tsx` with `animation: 'slide_from_bottom'` (and `add-exercise` with `presentation: 'modal'`).
@@ -233,7 +234,7 @@ Everything runs from the APK, in airplane mode.
 
 **Then:**
 
-- A functional "no" that blocks logging is fixed now (fix-up commits) and rechecked on the APK. Any other "no", and every usability change worth making, goes into `docs/backlog.md`.
+- A functional "no" that blocks logging is fixed now (fix-up commits) and rechecked on the APK. Any other "no", and every usability change worth making, goes into `PLAN.md` (the fitting phase or the backlog).
 - A final commit ticks the Part B checklist ("Mark Phase 3 as done").
 
 ## Final checklist
@@ -273,5 +274,5 @@ The session was logged from the `preview` APK (EAS build 4, clean install, airpl
 | Was anything missing that forced a paper note or another app? | No. |
 
 **What goes where**
-- FG% coloring (success/danger by FG%, on set rows, exercise totals and the summary) → `docs/backlog.md`.
+- FG% coloring (success/danger by FG%, on set rows, exercise totals and the summary) → added to Phase 7 (polish) in `PLAN.md`. The thresholds are still to be decided then.
 - Nothing else changes: the rest of the answers confirm the current behavior.
