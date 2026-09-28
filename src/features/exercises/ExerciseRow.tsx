@@ -18,7 +18,6 @@ type ExerciseRowProps = {
  * An exercise in the catalog list (the Exercises tab and the picker): its media as a still
  * thumbnail, its name, tracking type and a Custom marker. Holding the row plays the media in
  * place until the finger lifts, like a video thumbnail on hover; a hold doesn't count as a tap.
- * Known issue: moving the finger while holding stops it (see phase-6.md, "Results").
  */
 export function ExerciseRow({ exercise, onPress, rightIcon = 'chevron_right' }: ExerciseRowProps) {
   const [previewing, setPreviewing] = useState(false);

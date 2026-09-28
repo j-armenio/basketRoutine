@@ -20,14 +20,14 @@ Detailed plan for Phase 2 of [PLAN.md](PLAN.md).
 | Icons | `expo-symbols` (Material Symbols, drawn from a font on Android, so it works in Expo Go). Wrapped in one `Icon` component that takes the Android symbol name, so the library can be swapped and mocked in one place. The icon font is **preloaded behind the splash screen** (with `useFonts` and `expo-symbols/androidWeights/regular`, the same weight `SymbolView` uses by default) together with the DB setup, so the tab icons don't wait for the font to load. `SymbolView` still draws an empty box for its very first frame (it re-checks the font asynchronously on every mount). That's a one-frame blink, not worth chasing. |
 | Touch & "sweaty hands" | Minimum touch target 48 dp for everything pressable (Android guideline), 56 dp for primary actions. Small icons get `hitSlop` up to 48 dp. Every pressable shows visible pressed feedback (background/opacity change). Every action is a plain tap: nothing needs long-press or swipe. These live as tokens (`touch.min`, `touch.primary`). Input tokens (height, large numeric font size) are defined now too. The input component itself is built in Phase 3 with the set table, which is its first real use. |
 | Base components | The six the placeholders use: `Screen`, `AppText`, `Button`, `Card`, `EmptyState`, `Icon`. Their options go slightly beyond what the placeholders use, but only options Phase 3 is already known to need. `Button` gets all four variants: `primary` for Start/Finish, `secondary` for Add Exercise, `ghost` for Add Set, `danger` for Discard. `Card` can be pressable (routine cards) and `EmptyState` takes an optional action. Everything else (set row, number input, list item, bottom sheet…) is extracted when a real screen needs it. |
-| Accessibility | Base components pass through `accessibilityRole` / `accessibilityLabel` / `accessibilityState` (e.g. `Button` sets `role="button"` and `disabled`). Tabs use their titles as labels. A full accessibility pass is Phase 7. |
+| Accessibility | Base components pass through `accessibilityRole` / `accessibilityLabel` / `accessibilityState` (e.g. `Button` sets `role="button"` and `disabled`). Tabs use their titles as labels. A full accessibility pass: `docs/backlog.md`. |
 | Component tests | React Native Testing Library, next to the components (`*.test.tsx`). Shell navigation is tested with `renderRouter` from `expo-router/testing-library`, in `__tests__/`. Jest switches from the `jest-expo` preset (which simulates **iOS**) to `jest-expo/android`, so tests run the same code paths as the phone: `Platform.OS`, Android's `SymbolView` and Android tab roles. The existing 73 tests already pass under it (checked). |
 
 ## Out of scope (belongs to later phases)
 
 - Any real content in the tabs: routines list, "Start Empty Workout" behavior → Phase 3/6. Catalog browsing and search → Phase 5. Session list → Phase 4.
 - The set-table input, list rows, modals/bottom sheets, "resume workout" banner → Phase 3 (extracted there).
-- Haptics, empty-state polish, app icon and splash art, full accessibility pass → Phase 7.
+- Haptics, empty-state polish, app icon and splash art, full accessibility pass → `docs/backlog.md`.
 - A light theme or a theme switcher: the app is dark only.
 - A standalone component gallery screen: the placeholders plus component tests cover the base components.
 

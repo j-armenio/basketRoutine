@@ -24,8 +24,7 @@ Detailed plan for Phase 0 of [PLAN.md](PLAN.md).
 
 - Bottom tabs, theme tokens, base components → Phase 2.
 - SQLite / Drizzle, domain logic → Phase 1.
-- Final app icon and splash art → Phase 7.
-- E2E tests and `production` build profile → Phase 7.
+- Final app icon and splash art, E2E tests and the `production` build profile → `docs/backlog.md`.
 
 ## Prerequisites
 
@@ -64,7 +63,7 @@ Nothing is installed without asking first. Tools used in this phase:
 - `userInterfaceStyle: "dark"`, so the app is always dark and ignores the system theme. On Android this requires `expo-system-ui`.
 - Dark background for the splash screen (in the `expo-splash-screen` plugin config) and the Android root view (`backgroundColor`, also through `expo-system-ui`), so the app doesn't flash white on launch.
 - Keep Android Auto Backup at its default; nothing to configure (see PLAN risks).
-- Keep the template's placeholder icon; the real icon comes in Phase 7.
+- Keep the template's placeholder icon (the real one: `docs/backlog.md`).
 
 ### 3. Project structure and TypeScript
 - `app/` holds routes only (Expo Router). Everything else goes in `src/` (`src/theme`, and later `src/db`, `src/domain`, `src/components`).
@@ -141,7 +140,7 @@ Nothing is installed without asking first. Tools used in this phase:
 - [x] CI is green on GitHub for the latest commit on `main`.
 - [x] The "Build APK" workflow runs the checks, then queues a build on EAS, and the build finishes on the EAS dashboard.
 - [x] The APK installs on the phone and opens (checked with the Phase 3 build, which replaced the placeholder screen).
-- [ ] The workflow APK installs over the step 8 APK without uninstalling.
+- [x] The workflow APK installs over the step 8 APK without uninstalling (confirmed 2026-09-28 with the Phase 5 APK, see `phase-5.md`).
 - [x] Keystore backup stored outside the repo.
 
-**Status:** everything above except the APK build/install/keystore-backup items is done (commits `687028a`, `ae17cfa`). The EAS project (`@jarmenio/basket-routine`) is created and linked in `app.json`. A first `eas build` was canceled deliberately; the next ones finished (build 3 on 2026-09-23, build 4 on 2026-09-25 from the workflow, with the Phase 3 code). The APK is installed and the keystore backup is stored outside the repo. Still unchecked: that a workflow APK installs over the step 8 one without uninstalling (not confirmed).
+**Status:** everything above except the APK build/install/keystore-backup items is done (commits `687028a`, `ae17cfa`). The EAS project (`@jarmenio/basket-routine`) is created and linked in `app.json`. A first `eas build` was canceled deliberately; the next ones finished (build 3 on 2026-09-23, build 4 on 2026-09-25 from the workflow, with the Phase 3 code). The APK is installed and the keystore backup is stored outside the repo. Installing a workflow APK over an earlier one without uninstalling was confirmed on 2026-09-28 (Phase 5, Part B).
