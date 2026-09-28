@@ -83,19 +83,19 @@ Nothing is installed without asking first. What this phase needs:
 
 ## Final checklist
 
-- [ ] FG% shows one decimal everywhere, none when it is 0 (`formatFgPct` tests), and `99.9%` fits the set table. (Tests done; the fit is checked on the phone.)
+- [x] FG% shows one decimal everywhere, none when it is 0 (`formatFgPct` tests), and `99.9%` fits the set table.
 - [x] `fgBand`, the `success` contrast and the colored set rows / totals have tests.
 - [x] Haptics on the three moments only, with tests; nothing breaks with haptics off.
 - [x] Empty-state audit written in "Results", gaps filled.
 - [x] `expectAccessibleControls` runs in every flow test file and passes.
 - [x] Placeholder icon and splash PNGs exported from the SVG source.
-- [ ] On the phone (Expo Go): FG% coloring, haptics, empty states, TalkBack and the largest font size checked.
+- [x] On the phone (Expo Go): FG% coloring, haptics, empty states, TalkBack and the largest font size checked.
 - [x] `npm run lint`, `format:check`, `typecheck`, `test` and `npx expo-doctor` pass locally, and `db:generate` leaves the migrations unchanged.
-- [ ] CI is green on `main`.
+- [x] CI is green on `main`.
 
 ## Results
 
-Steps 1 to 5 done (2026-09-28). The phase commit was made before the on-phone check (step 6), at the developer's request; changes from that check go in fix-up commits. All CI checks pass locally: lint, format, typecheck, 488 tests (443 before), `db:generate` with no schema change, `expo-doctor` 21/21.
+**Phase 7 done** (2026-09-28). The phase commit (`738bf68`, CI green on `main`) was made before the on-phone check (step 6), at the developer's request; the check then passed with no change needed. All CI checks pass locally: lint, format, typecheck, 488 tests (443 before), `db:generate` with no schema change, `expo-doctor` 21/21.
 
 ### 1. FG% format and coloring
 - `formatFgPct` rounds in tenths as an integer and drops a `.0`. `fgBand` (`src/domain/fg.ts`) uses the same rounding, so 0.5996 reads "60%" and is good, 0.3996 reads "40%" and is neutral. `fgTone` lives in `src/components/fgTone.ts`, next to `AppText`.
@@ -140,3 +140,5 @@ Steps 1 to 5 done (2026-09-28). The phase commit was made before the on-phone ch
 - Files (same names, `app.json` unchanged, `imageWidth` stays 76): `icon.png` 1024 × 1024 (ball 640 px on `#121212`), `android-icon-foreground.png` 1024 × 1024 (ball 540 px, inside the ~626 px safe-zone circle, transparent around it), `android-icon-monochrome.png` (the same in white), `splash-icon.png` 304 × 304 (the ball edge to edge, shown 76 dp wide on `#121212`).
 - Mask check: the foreground's visible 72 dp (683 px) under a circle, a squircle and a rounded square, rendered in a one-off preview image (not committed): the ball keeps a ~70 px margin on all three, nothing is cut. The real look is confirmed on the next APK.
 
+### 6. Check on the phone (Expo Go)
+- Passed on the first pass, with no feedback to apply (2026-09-28): FG% with its decimal and colored everywhere, `99.9%` fits the set table, the haptics on the three moments only, the empty states, TalkBack through the main flow and the largest font size (no `maxFontSizeMultiplier` needed).
