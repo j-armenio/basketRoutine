@@ -1,3 +1,4 @@
+import { colors } from '@/theme/colors';
 import { render, screen } from '@testing-library/react-native';
 import { SessionExerciseView } from './SessionExerciseView';
 import type { SessionExerciseDetail } from '../workout/hooks';
@@ -65,8 +66,34 @@ test('a fixed-makes drill logs attempts', async () => {
   expect(screen.getByText('Fixed makes · log attempts')).toBeOnTheScreen();
   expect(screen.getByLabelText('Set 1 makes')).toHaveTextContent('5');
   expect(screen.getByLabelText('Set 1 attempts')).toHaveTextContent('8');
-  expect(screen.getByLabelText('Set 1 FG%')).toHaveTextContent('63%');
-  expect(screen.getByText('Total: 5 makes / 8 attempts · 63%')).toBeOnTheScreen();
+  expect(screen.getByLabelText('Set 1 FG%')).toHaveTextContent('62.5%');
+  expect(screen.getByText('Total: 5 makes / 8 attempts · 62.5%')).toBeOnTheScreen();
+});
+
+test('each FG% is colored by its band: good, poor, neutral, and muted when empty', async () => {
+  await render(
+    <SessionExerciseView
+      exercise={exercise({
+        sets: [set(1, 10, 7), set(2, 10, 2), set(3, 10, 5), set(4, 10, null)],
+      })}
+    />,
+  );
+
+  expect(screen.getByLabelText('Set 1 FG%')).toHaveStyle({ color: colors.success });
+  expect(screen.getByLabelText('Set 2 FG%')).toHaveStyle({ color: colors.danger });
+  expect(screen.getByLabelText('Set 3 FG%')).toHaveStyle({ color: colors.textMuted });
+  expect(screen.getByLabelText('Set 4 FG%')).toHaveStyle({ color: colors.textMuted });
+  // the total, 14 / 30 = 46.7%: neutral, only the percent is its own text
+  expect(screen.getByText('46.7%')).toHaveStyle({ color: colors.textMuted });
+});
+
+test("the total's percent takes the band's color, not the line", async () => {
+  await render(<SessionExerciseView exercise={exercise({ sets: [set(1, 10, 1)] })} />);
+
+  const line = screen.getByText('Total: 1 makes / 10 attempts · 10%');
+  expect(line).toHaveStyle({ color: colors.textMuted });
+  // the set's FG% and the total's are both 10%: the last one is the total
+  expect(screen.getAllByText('10%').at(-1)).toHaveStyle({ color: colors.danger });
 });
 
 test('a check drill shows ✓ for a done set and — for the rest, with no total', async () => {

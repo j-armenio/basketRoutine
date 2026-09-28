@@ -1,6 +1,7 @@
 import { Button } from '@/components/Button';
 import { EmptyState } from '@/components/EmptyState';
 import { IconButton } from '@/components/IconButton';
+import { haptics } from '@/components/haptics';
 import { Screen } from '@/components/Screen';
 import {
   discardWorkout,
@@ -89,6 +90,7 @@ export default function ActiveWorkoutScreen() {
           text: 'Finish',
           onPress: () => {
             if (!finishWorkout(session.id).ok) return;
+            haptics.confirm();
             // The summary goes first, so it shows behind the question.
             router.replace(`/workout-summary/${session.id}`);
             offerTemplateUpdate(session.id);

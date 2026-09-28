@@ -1,4 +1,4 @@
-import { fgRatio, setFgPct, setMakesAttempts } from './fg';
+import { FG_GOOD_PCT, FG_POOR_PCT, fgBand, fgRatio, setFgPct, setMakesAttempts } from './fg';
 
 describe('setMakesAttempts', () => {
   test('makes mode: target is makes, logged is attempts', () => {
@@ -44,5 +44,27 @@ describe('fg percentages', () => {
   test('fgRatio is null with no attempts', () => {
     expect(fgRatio(0, 0)).toBeNull();
     expect(fgRatio(1, 4)).toBe(0.25);
+  });
+});
+
+describe('fgBand', () => {
+  test('the thresholds', () => {
+    expect(FG_GOOD_PCT).toBe(60);
+    expect(FG_POOR_PCT).toBe(40);
+  });
+
+  test.each([
+    [null, 'none'],
+    [0, 'poor'],
+    [0.399, 'poor'],
+    [0.4, 'neutral'],
+    [0.599, 'neutral'],
+    [0.6, 'good'],
+    [1, 'good'],
+    // on the rounded percent: 0.5996 reads "60%", 0.3996 reads "40%"
+    [0.5996, 'good'],
+    [0.3996, 'neutral'],
+  ] as const)('%s -> %s', (ratio, band) => {
+    expect(fgBand(ratio)).toBe(band);
   });
 });

@@ -20,6 +20,7 @@ import { notifyDataChanged } from '@/features/dataStore';
 import { act, cleanup, fireEvent, screen, userEvent, within } from '@testing-library/react-native';
 import { eq } from 'drizzle-orm';
 import { renderRouter } from 'expo-router/testing-library';
+import { expectAccessibleControls } from '@/test-utils/a11y';
 import { launchImageLibraryAsync } from 'expo-image-picker';
 import { Alert } from 'react-native';
 
@@ -157,6 +158,7 @@ async function openDetail(user: User, name: string) {
 
 async function pressMenu(user: User, option: string) {
   await user.press(screen.getByRole('button', { name: 'Exercise menu' }));
+  expectAccessibleControls();
   await user.press(screen.getByRole('button', { name: option }));
 }
 
@@ -200,6 +202,8 @@ describe('the Exercises tab', () => {
     expect(screen.getByText('38 exercises')).toBeOnTheScreen();
     // the chip and the section header
     expect(screen.getAllByText('Finishing')).toHaveLength(2);
+    expect(screen.getByRole('header', { name: 'Finishing' })).toBeOnTheScreen();
+    expectAccessibleControls();
 
     await search(user, 'FREE');
 
@@ -214,6 +218,7 @@ describe('the Exercises tab', () => {
 
     expect(screen.getByText('No exercises found')).toBeOnTheScreen();
     expect(screen.getByText('38 exercises')).toBeOnTheScreen();
+    expectAccessibleControls();
   });
 
   test('a category chip filters, All clears it, and it combines with search', async () => {
@@ -277,6 +282,7 @@ describe('the Exercises tab', () => {
 
     expect(screen.getByText('No custom exercises yet')).toBeOnTheScreen();
     expect(screen.getByText('Create one with the + button.')).toBeOnTheScreen();
+    expectAccessibleControls();
   });
 
   test('a custom exercise shows the Custom marker, and the count follows a new one', async () => {
@@ -368,6 +374,7 @@ describe('the exercise detail', () => {
     expect(screen.getByText("Predefined exercise. It can't be edited.")).toBeOnTheScreen();
     expect(bigMedia().getByTestId('media-placeholder', HIDDEN)).toBeOnTheScreen();
     expect(screen.queryByRole('button', { name: 'Exercise menu' })).toBeNull();
+    expectAccessibleControls();
   });
 
   test('a custom exercise has no note and no description shows a placeholder', async () => {
@@ -390,6 +397,7 @@ describe('the exercise detail', () => {
 
     await launch('/exercise/9999');
     expect(screen.getByText('Exercise not found')).toBeOnTheScreen();
+    expectAccessibleControls();
   });
 
   test('media plays large: an image, a GIF animating, a video with controls; none is the placeholder', async () => {
@@ -412,6 +420,7 @@ describe('the exercise detail', () => {
     await launch(`/exercise/${video.id}`);
     expect(screen.getByTestId('video-view').props).toMatchObject({ nativeControls: true });
     expect(screen.getByTestId('video-view').props.player.source).toBe(stored('c.mp4'));
+    expectAccessibleControls();
     await cleanup();
 
     await launch(`/exercise/${plain.id}`);
@@ -428,6 +437,7 @@ describe('creating', () => {
     await user.press(screen.getByRole('button', { name: 'New exercise' }));
     expect(app.getPathname()).toBe('/edit-exercise');
     expect(bigMedia().getByTestId('media-placeholder', HIDDEN)).toBeOnTheScreen();
+    expectAccessibleControls();
 
     await user.press(screen.getByRole('button', { name: 'Save' }));
 
@@ -524,6 +534,7 @@ describe('editing', () => {
     expect(
       screen.getByText("Tracking type can't be changed after the exercise is created"),
     ).toBeOnTheScreen();
+    expectAccessibleControls();
 
     await user.clear(screen.getByLabelText('Exercise name'));
     await user.type(screen.getByLabelText('Exercise name'), 'Logo Threes');
@@ -537,6 +548,7 @@ describe('editing', () => {
     expect(screen.getByRole('header', { name: 'Logo Threes' })).toBeOnTheScreen();
     expect(screen.getByText('Finishing · Makes / Attempts')).toBeOnTheScreen();
     expect(screen.getByText('From the logo')).toBeOnTheScreen();
+    expectAccessibleControls();
     const edited = getExercise(db, custom.id)!;
     expect(edited).toMatchObject({
       name: 'Logo Threes',

@@ -21,7 +21,10 @@ type RoutineSectionProps = {
   onStartWorkout: (workoutId: number) => void;
 };
 
-/** A routine on the Workout tab: its name and menu, its workout cards and "New Workout". */
+/**
+ * A routine on the Workout tab: its name and menu, its workout cards (or a line saying there is
+ * none) and "New Workout".
+ */
 export function RoutineSection({
   routine,
   index,
@@ -51,7 +54,7 @@ export function RoutineSection({
   return (
     <View style={styles.section}>
       <View style={styles.header}>
-        <AppText variant="heading" numberOfLines={1} style={styles.name}>
+        <AppText variant="heading" accessibilityRole="header" numberOfLines={1} style={styles.name}>
           {routine.name}
         </AppText>
         <IconButton
@@ -60,6 +63,7 @@ export function RoutineSection({
           onPress={() => setMenuOpen(true)}
         />
       </View>
+      {n === 0 && <AppText tone="muted">No workouts in this routine yet.</AppText>}
       {routine.workouts.map((workout, position) => (
         <WorkoutCard
           key={workout.id}

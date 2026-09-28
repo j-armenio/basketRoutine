@@ -78,7 +78,9 @@ export default function WorkoutScreen() {
   return (
     <Screen title="Workout">
       <Card>
-        <AppText variant="heading">Quick Start</AppText>
+        <AppText variant="heading" accessibilityRole="header">
+          Quick Start
+        </AppText>
         <Button
           label={session ? 'Resume Workout' : 'Start Empty Workout'}
           icon={session ? 'play_arrow' : 'add'}
@@ -87,7 +89,7 @@ export default function WorkoutScreen() {
         />
       </Card>
       <View style={styles.heading}>
-        <AppText variant="heading" style={styles.headingText}>
+        <AppText variant="heading" accessibilityRole="header" style={styles.headingText}>
           Routines
         </AppText>
         {routines.length > 0 && (

@@ -1,6 +1,7 @@
 import { useDatabaseSetup } from '@/db/useDatabaseSetup';
 import { screen, userEvent } from '@testing-library/react-native';
 import { renderRouter } from 'expo-router/testing-library';
+import { expectAccessibleControls } from '@/test-utils/a11y';
 
 // expo-sqlite can't run in Jest, so the app's DB is swapped for a real one
 // (better-sqlite3 in memory, with the real migrations) and seeded like at startup.
@@ -41,14 +42,17 @@ test('starts on Workout and switches between the three tabs', async () => {
   const start = screen.getByRole('button', { name: 'Start Empty Workout' });
   expect(start).toBeEnabled();
   expect(screen.queryByText('Workout in progress')).toBeNull();
+  expectAccessibleControls();
 
   await user.press(screen.getByRole('tab', { name: 'Exercises' }));
   expect(app.getPathname()).toBe('/exercises');
   expect(screen.getByText('38 exercises')).toBeOnTheScreen();
+  expectAccessibleControls();
 
   await user.press(screen.getByRole('tab', { name: 'History' }));
   expect(app.getPathname()).toBe('/history');
   expect(screen.getByText('No workouts yet')).toBeOnTheScreen();
+  expectAccessibleControls();
 
   await user.press(screen.getByRole('tab', { name: 'Workout' }));
   expect(app.getPathname()).toBe('/');
@@ -60,4 +64,5 @@ test('shows the database error and no tab bar', async () => {
 
   expect(screen.getByText('Database error: boom')).toBeOnTheScreen();
   expect(screen.queryByRole('tab')).toBeNull();
+  expectAccessibleControls();
 });

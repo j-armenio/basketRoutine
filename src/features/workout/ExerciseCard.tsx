@@ -2,7 +2,9 @@ import { ActionSheet } from '@/components/ActionSheet';
 import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
+import { fgTone } from '@/components/fgTone';
 import { IconButton } from '@/components/IconButton';
+import { fgBand } from '@/domain/fg';
 import { formatFgPct } from '@/domain/format';
 import { summarizeExercise } from '@/domain/summary';
 import { spacing } from '@/theme/spacing';
@@ -71,7 +73,10 @@ export function ExerciseCard({ exercise, index, count, onMove }: ExerciseCardPro
       </View>
       {summary.trackingType === 'makes_attempts' && summary.attempts > 0 && (
         <AppText tone="muted">
-          Total: {summary.makes} makes / {summary.attempts} attempts · {formatFgPct(summary.fgPct)}
+          Total: {summary.makes} makes / {summary.attempts} attempts ·{' '}
+          <AppText tone={fgTone(fgBand(summary.fgPct), 'muted')}>
+            {formatFgPct(summary.fgPct)}
+          </AppText>
         </AppText>
       )}
       <Button

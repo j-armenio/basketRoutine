@@ -1,9 +1,14 @@
 // The swipe itself can't run in Jest (it's a Reanimated gesture on the UI thread), so the row
 // renders as a plain view. Tests delete through SwipeToDelete's accessibility action instead,
-// and the gesture is checked on the phone.
+// and the gesture is checked on the phone. The view keeps `onSwipeableOpen`, so a test can fire
+// the end of a swipe (`swipeableOpen`) on it.
 jest.mock('react-native-gesture-handler/ReanimatedSwipeable', () => {
   const { View } = require('react-native');
-  const Swipeable = ({ children, testID }) => <View testID={testID}>{children}</View>;
+  const Swipeable = ({ children, testID, onSwipeableOpen }) => (
+    <View testID={testID} onSwipeableOpen={onSwipeableOpen}>
+      {children}
+    </View>
+  );
   return { __esModule: true, default: Swipeable };
 });
 
@@ -81,5 +86,18 @@ jest.mock('expo-video', () => {
         return player;
       }, [source]),
     VideoView: (props) => <View testID="video-view" {...props} />,
+  };
+});
+
+// No vibrator in Jest: every function resolves, so tests can assert the calls and their constants.
+jest.mock('expo-haptics', () => {
+  const actual = jest.requireActual('expo-haptics/src/Haptics.types');
+  return {
+    __esModule: true,
+    ...actual,
+    performAndroidHapticsAsync: jest.fn(async () => {}),
+    notificationAsync: jest.fn(async () => {}),
+    impactAsync: jest.fn(async () => {}),
+    selectionAsync: jest.fn(async () => {}),
   };
 });

@@ -17,3 +17,9 @@ test('applies the variant and tone', async () => {
 
   expect(screen.getByText('Oops')).toHaveStyle({ fontSize: 28, color: colors.danger });
 });
+
+test('has a success tone', async () => {
+  await render(<AppText tone="success">Nice</AppText>);
+
+  expect(screen.getByText('Nice')).toHaveStyle({ color: colors.success });
+});

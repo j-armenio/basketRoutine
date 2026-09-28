@@ -1,3 +1,4 @@
+import { fgBand, type FgBand } from '@/domain/fg';
 import { formatFgPct, formatMonth } from '@/domain/format';
 import { summarizeSession } from '@/domain/summary';
 import type { SessionSummary, SummaryExercise } from '@/domain/summary';
@@ -37,15 +38,19 @@ export function toHistoryItem(session: FinishedSession): HistoryItem {
 }
 
 /**
- * The right side of a History row: the overall FG% when a shooting set was logged, and
- * `x / y done` when the session has check drills. Either can be missing, or both.
+ * The right side of a History row: the overall FG% (and its band, for the color) when a shooting
+ * set was logged, and `x / y done` when the session has check drills. Either can be missing, or
+ * both.
  */
 export function sessionResult(summary: SessionSummary): {
   fgPct: string | null;
+  fgBand: FgBand;
   checks: string | null;
 } {
+  const shot = summary.shooting.attempts > 0;
   return {
-    fgPct: summary.shooting.attempts > 0 ? formatFgPct(summary.shooting.fgPct) : null,
+    fgPct: shot ? formatFgPct(summary.shooting.fgPct) : null,
+    fgBand: shot ? fgBand(summary.shooting.fgPct) : 'none',
     checks:
       summary.check.total > 0 ? `${summary.check.completed} / ${summary.check.total} done` : null,
   };

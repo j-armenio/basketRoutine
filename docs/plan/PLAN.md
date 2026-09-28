@@ -102,11 +102,20 @@ Phases are ordered so a usable prototype (empty workout logged on the court) exi
 - Create / edit / delete custom exercises, choosing the tracking type and picking the media from the phone's gallery (predefined ones are read-only, media included).
 - **Done when:** user can find any exercise and create a custom one.
 
-### Phase 7 — Polish, Testing & Release
-- E2E tests of the main flow (create routine → start → log → finish → history).
-- UX polish: empty states, haptics, accessibility labels, app icon and splash, and FG% coloring (success/danger by FG% on set rows, totals and the summary; asked for after the first court session).
-- Performance check on the target phone during a long session.
-- Release APK installed on the phone.
+### Phase 7 — Polish
+- FG% coloring (success/danger by FG% on set rows, totals, the summary and history; asked for after the first court session).
+- Haptics, an empty-state pass and an accessibility pass over every screen.
+- A placeholder app icon and splash (a basketball glyph); the final art comes with the visual redesign.
+- **Done when:** the polish works on the phone and CI is green.
+
+### Phase 8 — Visual Redesign
+- A visual refresh of the whole app, planned in detail when the phase starts.
+- **Done when:** every screen follows the new look on the phone.
+
+### Phase 9 — Testing & Release
+- E2E tests of the main flow (create routine → start → log → finish → history), run on the phone against a separate test install, so the real data is never touched.
+- Performance check on the target phone with a long session and a long history.
+- Release APK (v1.0) installed over the current one, keeping the data.
 - **Done when:** v1.0 APK is installed and used in a real training session.
 
 ## 5. Risks & Mitigations
@@ -115,4 +124,4 @@ Phases are ordered so a usable prototype (empty workout logged on the court) exi
 - **No internet in the gym** → media is stored on the phone (or ships with the app), never loaded from the web; a placeholder when an exercise has none.
 - **Set logging awkward on the court** → validated early with the Phase 3 prototype (on the phone before templates are built, and on the court while they are).
 - **Broken history after deletes** → session snapshots + archiving instead of hard deletes.
-- **Scope creep** → nothing beyond the planned phases until Phase 7 is done.
+- **Scope creep** → nothing beyond the planned phases until v1.0 is released (Phase 9).

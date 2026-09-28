@@ -18,8 +18,9 @@ export const setTable = StyleSheet.create({
   loggedColumn: {
     flex: 1,
   },
+  // Fits `99.9%`, the widest FG%.
   fgColumn: {
-    width: 56,
+    width: 72,
     alignItems: 'flex-end',
   },
 });

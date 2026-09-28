@@ -30,7 +30,11 @@ export function TemplateSetRow(props: TemplateSetRowProps) {
       testID={`set-${number}`}
       enabled={deletable}
       deleteLabel={`Delete set ${number}`}
-      onDelete={() => updateDraft((draft) => deleteSet(draft, exerciseKey, set.key))}
+      onDelete={() => {
+        // a draft edit can't fail
+        updateDraft((draft) => deleteSet(draft, exerciseKey, set.key));
+        return true;
+      }}
     >
       {targetMode === null ? (
         <View style={setTable.row}>

@@ -77,6 +77,7 @@ describe('sessionResult', () => {
   test('shooting only', () => {
     expect(sessionResult(summary({ makes: 7, attempts: 10 }, { completed: 0, total: 0 }))).toEqual({
       fgPct: '70%',
+      fgBand: 'good',
       checks: null,
     });
   });
@@ -84,26 +85,35 @@ describe('sessionResult', () => {
   test('check only', () => {
     expect(sessionResult(summary({ makes: 0, attempts: 0 }, { completed: 1, total: 3 }))).toEqual({
       fgPct: null,
+      fgBand: 'none',
       checks: '1 / 3 done',
     });
   });
 
   test('mixed shows both', () => {
     expect(sessionResult(summary({ makes: 2, attempts: 3 }, { completed: 2, total: 2 }))).toEqual({
-      fgPct: '67%',
+      fgPct: '66.7%',
+      fgBand: 'good',
       checks: '2 / 2 done',
     });
   });
 
-  test('a shooting session with a logged 0 makes still shows 0%', () => {
+  test('a shooting session with a logged 0 makes still shows 0%, as poor', () => {
     expect(
-      sessionResult(summary({ makes: 0, attempts: 5 }, { completed: 0, total: 0 })).fgPct,
-    ).toBe('0%');
+      sessionResult(summary({ makes: 0, attempts: 5 }, { completed: 0, total: 0 })),
+    ).toMatchObject({ fgPct: '0%', fgBand: 'poor' });
+  });
+
+  test('the band of a middle value is neutral', () => {
+    expect(
+      sessionResult(summary({ makes: 1, attempts: 2 }, { completed: 0, total: 0 })),
+    ).toMatchObject({ fgPct: '50%', fgBand: 'neutral' });
   });
 
   test('neither: both are null', () => {
     expect(sessionResult(summary({ makes: 0, attempts: 0 }, { completed: 0, total: 0 }))).toEqual({
       fgPct: null,
+      fgBand: 'none',
       checks: null,
     });
   });

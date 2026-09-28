@@ -1,6 +1,11 @@
-/** FG% as a whole percent, or an em dash when there is nothing to divide. */
+/**
+ * FG% with one decimal, dropped when it is 0 (`45.3%`, `50%`), or an em dash when there is
+ * nothing to divide. Rounded in tenths as an integer, so the "is the decimal 0" test is exact.
+ */
 export function formatFgPct(ratio: number | null): string {
-  return ratio === null ? '—' : `${Math.round(ratio * 100)}%`;
+  if (ratio === null) return '—';
+  const tenths = Math.round(ratio * 1000);
+  return tenths % 10 === 0 ? `${tenths / 10}%` : `${(tenths / 10).toFixed(1)}%`;
 }
 
 export type ParsedCount =

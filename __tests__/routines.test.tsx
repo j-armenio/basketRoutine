@@ -15,7 +15,9 @@ import { closeDraft } from '@/features/routines/draftStore';
 import { act, cleanup, fireEvent, screen, userEvent } from '@testing-library/react-native';
 import { eq } from 'drizzle-orm';
 import { router } from 'expo-router';
+import { AndroidHaptics, performAndroidHapticsAsync } from 'expo-haptics';
 import { renderRouter } from 'expo-router/testing-library';
+import { expectAccessibleControls } from '@/test-utils/a11y';
 import { Alert } from 'react-native';
 
 // Same setup as active-workout.test.tsx: a real in-memory DB with the real migrations, seeded
@@ -38,8 +40,10 @@ const { db } = jest.requireMock('@/db/client') as { db: Db };
 const setupUser = () => userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
 
 let alertSpy: jest.SpyInstance;
+const haptic = jest.mocked(performAndroidHapticsAsync);
 
 beforeEach(() => {
+  haptic.mockClear();
   jest.mocked(useDatabaseSetup).mockReturnValue({ ready: true, error: null });
   alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 });
@@ -113,8 +117,10 @@ async function pickExercise(
 ) {
   await user.press(screen.getByRole('button', { name: 'Add Exercise' }));
   await user.type(screen.getByLabelText('Search exercises'), name);
+  expectAccessibleControls();
   await user.press(screen.getByText(name));
   if (mode) {
+    expectAccessibleControls();
     await user.press(
       screen.getByRole('button', {
         name: mode === 'attempts' ? 'Fixed attempts — log makes' : 'Fixed makes — log attempts',
@@ -128,16 +134,21 @@ describe('routines on the Workout tab', () => {
     await launch();
     const user = setupUser();
     expect(screen.getByText('No routines yet')).toBeOnTheScreen();
+    expectAccessibleControls();
 
     await user.press(screen.getByRole('button', { name: 'New Routine' }));
     expect(screen.getByRole('button', { name: 'Create' })).toBeDisabled();
+    expectAccessibleControls();
     await user.type(screen.getByLabelText('Name'), 'Push');
     await user.press(screen.getByRole('button', { name: 'Create' }));
 
     expect(screen.queryByText('No routines yet')).toBeNull();
-    expect(screen.getByText('Push')).toBeOnTheScreen();
+    expect(screen.getByRole('header', { name: 'Push' })).toBeOnTheScreen();
     expect(listRoutines(db).map((r) => r.name)).toEqual(['Push']);
+    // a routine with no workout says so
+    expect(screen.getByText('No workouts in this routine yet.')).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'New workout in Push' })).toBeOnTheScreen();
+    expectAccessibleControls();
   });
 
   test('rename, move and delete a routine, each reflected on the tab and in the DB', async () => {
@@ -148,6 +159,7 @@ describe('routines on the Workout tab', () => {
     const names = () => screen.getAllByRole('header').length && listRoutines(db).map((r) => r.name);
 
     await user.press(screen.getByRole('button', { name: 'Push menu' }));
+    expectAccessibleControls();
     await user.press(screen.getByRole('button', { name: 'Rename' }));
     expect(screen.getByLabelText('Name')).toHaveDisplayValue('Push');
     await user.clear(screen.getByLabelText('Name'));
@@ -183,8 +195,10 @@ describe('routines on the Workout tab', () => {
     const order = () => listWorkouts(db, routine.id).map((w) => w.name);
 
     expect(screen.getAllByText('Free Throws, Figure 8')).toHaveLength(2);
+    expectAccessibleControls();
 
     await user.press(screen.getByRole('button', { name: 'Second menu' }));
+    expectAccessibleControls();
     await user.press(screen.getByRole('button', { name: 'Move up' }));
     expect(order()).toEqual(['Second', 'First']);
 
@@ -209,6 +223,7 @@ describe('the template editor', () => {
     expect(app.getPathname()).toBe('/edit-workout');
     expect(screen.getByRole('header', { name: 'New Workout' })).toBeOnTheScreen();
     expect(screen.getByText('Add your first exercise')).toBeOnTheScreen();
+    expectAccessibleControls();
     await user.type(screen.getByLabelText('Workout name'), 'Shooting day');
 
     await pickExercise(user, 'Free Throws', 'attempts');
@@ -225,6 +240,7 @@ describe('the template editor', () => {
 
     await pickExercise(user, 'Figure 8');
     expect(screen.getByText('Check when done')).toBeOnTheScreen();
+    expectAccessibleControls();
     // nothing is written before Save
     expect(listWorkouts(db, routine.id)).toEqual([]);
 
@@ -376,6 +392,23 @@ describe('the template editor', () => {
 
     expect(app.getPathname()).toBe('/');
     expect(template(workout.id)).toEqual(templateBefore);
+    // the rollback on unmount is silent
+    expect(haptic).not.toHaveBeenCalled();
+  });
+
+  test('an invalid target is rolled back on blur with the reject haptic', async () => {
+    seedRoutine();
+    await launch();
+    const user = setupUser();
+    await user.press(screen.getByRole('button', { name: 'Edit Shooting day' }));
+
+    const target = screen.getAllByLabelText('Set 1 attempts')[0];
+    await fireEvent(target, 'focus');
+    await fireEvent.changeText(target, '0');
+    await fireEvent(target, 'blur');
+
+    expect(target).toHaveDisplayValue('10');
+    expect(haptic.mock.calls).toEqual([[AndroidHaptics.Reject]]);
   });
 
   test('exercises can be moved and removed after confirming, and Save keeps that order', async () => {
@@ -387,6 +420,7 @@ describe('the template editor', () => {
     await user.press(screen.getByRole('button', { name: 'Edit Shooting day' }));
 
     await user.press(screen.getByRole('button', { name: 'Figure 8 menu' }));
+    expectAccessibleControls();
     await user.press(screen.getByRole('button', { name: 'Move up' }));
     await user.press(screen.getByRole('button', { name: 'Save' }));
     expect(template(workout.id).exercises.map((e) => e.exercise.name)).toEqual([
@@ -415,6 +449,7 @@ describe('the template editor', () => {
     await fireEvent(screen.getAllByTestId('set-1')[0], 'accessibilityAction', {
       nativeEvent: { actionName: 'delete' },
     });
+    expect(haptic.mock.calls).toEqual([[AndroidHaptics.Confirm]]);
     await user.press(screen.getByRole('button', { name: 'Save' }));
 
     expect(targets(workout.id)).toEqual([[10], [null]]);
@@ -425,6 +460,7 @@ describe('the template editor', () => {
     await act(async () => router.push('/edit-workout?workoutId=999'));
 
     expect(screen.getByText('Workout not found')).toBeOnTheScreen();
+    expectAccessibleControls();
     await act(async () => router.back());
     expect(app.getPathname()).toBe('/');
   });
@@ -446,6 +482,7 @@ describe('starting from a template', () => {
     expect(screen.getByLabelText('Set 2 attempts')).toHaveDisplayValue('10');
     expect(screen.getByText('Figure 8')).toBeOnTheScreen();
     expect(getInProgressSession(db)).toMatchObject({ workoutId: workout.id });
+    expectAccessibleControls();
   });
 
   test('finishing with no structural change asks nothing', async () => {

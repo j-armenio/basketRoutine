@@ -26,6 +26,10 @@ const readablePairs: [Token, Token][] = [
   ['accent', 'surface'],
   ['danger', 'background'],
   ['danger', 'surface'],
+  ['success', 'background'],
+  ['success', 'surface'],
+  // a pressed Card, so a pressed History row
+  ['success', 'surfaceElevated'],
   ['tabInactive', 'surface'],
   ['onAccent', 'accent'],
   ['onAccent', 'accentPressed'],

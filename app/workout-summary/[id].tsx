@@ -2,7 +2,9 @@ import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { EmptyState } from '@/components/EmptyState';
+import { fgTone } from '@/components/fgTone';
 import { Screen } from '@/components/Screen';
+import { fgBand } from '@/domain/fg';
 import { formatDuration, formatFgPct, formatWorkoutDate } from '@/domain/format';
 import { summarizeExercise, summarizeSession } from '@/domain/summary';
 import { SessionTotals } from '@/features/history/SessionTotals';
@@ -51,11 +53,18 @@ export default function WorkoutSummaryScreen() {
                 {exercise.name}
               </AppText>
               <AppText tone="muted">
-                {result.trackingType === 'check'
-                  ? `${result.completed} / ${result.total} done`
-                  : result.attempts > 0
-                    ? `${result.makes} / ${result.attempts} · ${formatFgPct(result.fgPct)}`
-                    : '—'}
+                {result.trackingType === 'check' ? (
+                  `${result.completed} / ${result.total} done`
+                ) : result.attempts > 0 ? (
+                  <>
+                    {`${result.makes} / ${result.attempts} · `}
+                    <AppText tone={fgTone(fgBand(result.fgPct), 'muted')}>
+                      {formatFgPct(result.fgPct)}
+                    </AppText>
+                  </>
+                ) : (
+                  '—'
+                )}
               </AppText>
             </View>
           );

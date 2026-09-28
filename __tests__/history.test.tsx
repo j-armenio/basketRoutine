@@ -22,9 +22,11 @@ import {
 import { useDatabaseSetup } from '@/db/useDatabaseSetup';
 import type { Db } from '@/db/types';
 import { notifyDataChanged } from '@/features/dataStore';
+import { colors } from '@/theme/colors';
 import { act, cleanup, fireEvent, screen, userEvent, within } from '@testing-library/react-native';
 import { count, eq } from 'drizzle-orm';
 import { renderRouter } from 'expo-router/testing-library';
+import { expectAccessibleControls } from '@/test-utils/a11y';
 import { Alert } from 'react-native';
 
 // Same setup as routines.test.tsx: a real in-memory DB with the real migrations, seeded like at
@@ -135,8 +137,8 @@ function seedTemplate() {
 
 /**
  * Three finished sessions in two months, middle of the month so a time zone can't move them:
- * Sep 15 (from the template, mixed, with a note and an empty set), Aug 20 (shooting only, fixed
- * makes) and Aug 12 (checks only).
+ * Sep 15 (from the template, mixed, with a note and an empty set, 70%: good), Aug 20 (shooting
+ * only, fixed makes, 35.7%: poor) and Aug 12 (checks only).
  */
 function seedHistory() {
   const template = seedTemplate();
@@ -158,7 +160,7 @@ function seedHistory() {
   const layups = startEmptySession(db, 'Layups');
   logAndFinish(
     layups.id,
-    [{ key: 'mikan_drill', mode: 'makes', sets: [{ target: 5, logged: 8 }] }],
+    [{ key: 'mikan_drill', mode: 'makes', sets: [{ target: 5, logged: 14 }] }],
     new Date(2026, 7, 20, 18, 0),
     65,
   );
@@ -187,6 +189,7 @@ describe('the History list', () => {
 
     expect(screen.getByText('No workouts yet')).toBeOnTheScreen();
     expect(screen.queryByText(/workouts? logged/)).toBeNull();
+    expectAccessibleControls();
   });
 
   test('lists sessions by month, newest first, with date, duration and result', async () => {
@@ -202,9 +205,10 @@ describe('the History list', () => {
     expect(screen.getByText('3 workouts logged')).toBeOnTheScreen();
     expect(screen.queryByRole('button', { name: /^Still going, / })).toBeNull();
     const months = screen
-      .getAllByText(/^(September|August) 2026$/)
+      .getAllByRole('header', { name: /^(September|August) 2026$/ })
       .map((node) => node.props.children);
     expect(months).toEqual(['September 2026', 'August 2026']);
+    expectAccessibleControls();
     const rows = screen.getAllByRole('button', { name: /, (Tue|Thu|Wed), / });
     expect(rows.map((row) => row.props.accessibilityLabel)).toEqual([
       MORNING,
@@ -216,12 +220,12 @@ describe('the History list', () => {
     const mixed = within(rows[0]);
     expect(mixed.getByText('Tue, Sep 15, 2026 · 42 min')).toBeOnTheScreen();
     expect(mixed.getByText('Free Throws, Figure 8')).toBeOnTheScreen();
-    expect(mixed.getByText('70%')).toBeOnTheScreen();
+    expect(mixed.getByText('70%')).toHaveStyle({ color: colors.success });
     expect(mixed.getByText('1 / 2 done')).toBeOnTheScreen();
-    // shooting only: 5 makes / 8 attempts
+    // shooting only: 5 makes / 14 attempts
     const shooting = within(rows[1]);
     expect(shooting.getByText('Thu, Aug 20, 2026 · 1 h 05 min')).toBeOnTheScreen();
-    expect(shooting.getByText('63%')).toBeOnTheScreen();
+    expect(shooting.getByText('35.7%')).toHaveStyle({ color: colors.danger });
     expect(shooting.queryByText(/done/)).toBeNull();
     // checks only
     const checks = within(rows[2]);
@@ -277,6 +281,7 @@ describe('the session detail', () => {
     // the note, and nothing to edit
     expect(screen.getByLabelText('Free Throws note')).toHaveTextContent('elbow in');
     expect(screen.queryByRole('checkbox')).toBeNull();
+    expectAccessibleControls();
     expect(JSON.stringify(screen.toJSON())).not.toContain('"TextInput"');
 
     await user.press(screen.getByRole('button', { name: 'Back' }));
@@ -290,8 +295,9 @@ describe('the session detail', () => {
 
     expect(screen.getByText('Fixed makes · log attempts')).toBeOnTheScreen();
     expect(screen.getByLabelText('Set 1 makes')).toHaveTextContent('5');
-    expect(screen.getByLabelText('Set 1 attempts')).toHaveTextContent('8');
-    expect(screen.getByText('5 makes / 8 attempts')).toBeOnTheScreen();
+    expect(screen.getByLabelText('Set 1 attempts')).toHaveTextContent('14');
+    expect(screen.getByText('5 makes / 14 attempts')).toBeOnTheScreen();
+    expect(screen.getAllByText('35.7%')[0]).toHaveStyle({ color: colors.danger });
     expect(screen.queryByText('Checks')).toBeNull();
   });
 

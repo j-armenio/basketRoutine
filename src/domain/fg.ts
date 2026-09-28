@@ -32,3 +32,21 @@ export function setFgPct(set: ShootingSet): number | null {
   const result = setMakesAttempts(set);
   return result === null ? null : fgRatio(result.makes, result.attempts);
 }
+
+/** FG% bands, in whole percents: at or above GOOD is good, below POOR is poor. */
+export const FG_GOOD_PCT = 60;
+export const FG_POOR_PCT = 40;
+
+export type FgBand = 'good' | 'poor' | 'neutral' | 'none';
+
+/**
+ * The band of an FG% ratio, `none` when there is no value. Computed on the percent rounded in
+ * tenths, the number `formatFgPct` shows, so a value that reads "60%" is always good.
+ */
+export function fgBand(ratio: number | null): FgBand {
+  if (ratio === null) return 'none';
+  const tenths = Math.round(ratio * 1000);
+  if (tenths >= FG_GOOD_PCT * 10) return 'good';
+  if (tenths < FG_POOR_PCT * 10) return 'poor';
+  return 'neutral';
+}

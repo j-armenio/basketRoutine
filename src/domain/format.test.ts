@@ -9,11 +9,16 @@ import {
 
 describe('formatFgPct', () => {
   test.each([
-    [0.7, '70%'],
-    [2 / 3, '67%'],
-    [1, '100%'],
-    [0, '0%'],
     [null, '—'],
+    [0, '0%'],
+    [1, '100%'],
+    [0.5, '50%'],
+    [0.7, '70%'],
+    [2 / 3, '66.7%'],
+    [5 / 11, '45.5%'],
+    [0.9994, '99.9%'],
+    // rounds to a whole percent: no `.0`
+    [0.4996, '50%'],
   ])('%s -> %s', (ratio, expected) => {
     expect(formatFgPct(ratio)).toBe(expected);
   });

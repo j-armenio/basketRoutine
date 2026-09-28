@@ -7,6 +7,7 @@ const tones = {
   muted: colors.textMuted,
   accent: colors.accent,
   danger: colors.danger,
+  success: colors.success,
 };
 
 export type TextTone = keyof typeof tones;

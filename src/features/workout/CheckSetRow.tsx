@@ -22,7 +22,7 @@ export function CheckSetRow({ set, number, deletable }: CheckSetRowProps) {
       testID={`set-${number}`}
       enabled={deletable}
       deleteLabel={`Delete set ${number}`}
-      onDelete={() => deleteSet(set.id)}
+      onDelete={() => deleteSet(set.id).ok}
     >
       <View style={setTable.row}>
         <View style={setTable.numberColumn}>

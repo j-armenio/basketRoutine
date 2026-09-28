@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { AppText } from './AppText';
+import { haptics } from './haptics';
 import { Icon } from './Icon';
 
 const ACTION_WIDTH = 96;
@@ -11,7 +12,8 @@ const ACTION_WIDTH = 96;
 type SwipeToDeleteProps = {
   /** Names the delete action for screen readers (e.g. "Delete set 2"). */
   deleteLabel: string;
-  onDelete: () => void;
+  /** Deletes the row; returns whether it was deleted (a refused write returns false). */
+  onDelete: () => boolean;
   /** When false the row doesn't move and has no delete action. */
   enabled?: boolean;
   testID?: string;
@@ -21,6 +23,7 @@ type SwipeToDeleteProps = {
 /**
  * Drag the row to the left to delete it: a red "Delete" area shows behind it, and letting go
  * past half of it deletes. Screen readers get the same thing as a "delete" accessibility action.
+ * Either way, a deletion that went through confirms with a haptic.
  */
 export function SwipeToDelete({
   deleteLabel,
@@ -29,12 +32,16 @@ export function SwipeToDelete({
   testID,
   children,
 }: SwipeToDeleteProps) {
+  const remove = () => {
+    if (onDelete()) haptics.confirm();
+  };
+
   return (
     <View
       testID={testID}
       accessibilityActions={enabled ? [{ name: 'delete', label: deleteLabel }] : []}
       onAccessibilityAction={(event) => {
-        if (enabled && event.nativeEvent.actionName === 'delete') onDelete();
+        if (enabled && event.nativeEvent.actionName === 'delete') remove();
       }}
     >
       <ReanimatedSwipeable
@@ -52,7 +59,7 @@ export function SwipeToDelete({
             </AppText>
           </View>
         )}
-        onSwipeableOpen={onDelete}
+        onSwipeableOpen={remove}
       >
         <View style={styles.row}>{children}</View>
       </ReanimatedSwipeable>

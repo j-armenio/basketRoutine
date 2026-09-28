@@ -1,5 +1,6 @@
 import { AppText } from '@/components/AppText';
 import { Card } from '@/components/Card';
+import { fgTone } from '@/components/fgTone';
 import { formatDuration, formatExerciseList, formatWorkoutDate } from '@/domain/format';
 import { spacing } from '@/theme/spacing';
 import { StyleSheet, View } from 'react-native';
@@ -13,7 +14,7 @@ type HistoryRowProps = {
 /** A finished session in the History list: what it was, when, and its result on the right. */
 export function HistoryRow({ item, onPress }: HistoryRowProps) {
   const date = formatWorkoutDate(item.startedAt);
-  const { fgPct, checks } = sessionResult(item.summary);
+  const { fgPct, fgBand, checks } = sessionResult(item.summary);
 
   return (
     // The name alone isn't enough: names repeat ("Morning Workout").
@@ -30,7 +31,11 @@ export function HistoryRow({ item, onPress }: HistoryRowProps) {
         </View>
         <View style={styles.result}>
           {fgPct === null && checks === null && <AppText variant="number">—</AppText>}
-          {fgPct !== null && <AppText variant="number">{fgPct}</AppText>}
+          {fgPct !== null && (
+            <AppText variant="number" tone={fgTone(fgBand, 'default')}>
+              {fgPct}
+            </AppText>
+          )}
           {checks !== null && (
             <AppText variant="caption" tone="muted">
               {checks}

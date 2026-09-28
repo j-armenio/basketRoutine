@@ -1,10 +1,13 @@
-import { sessions } from '@/db/schema';
+import { sessionExercises, sessions } from '@/db/schema';
 import { getInProgressSession, getSessionDetail } from '@/db/repositories/sessions';
 import { useDatabaseSetup } from '@/db/useDatabaseSetup';
 import type { Db } from '@/db/types';
 import { notifyDataChanged } from '@/features/dataStore';
+import { colors } from '@/theme/colors';
 import { act, cleanup, fireEvent, screen, userEvent, within } from '@testing-library/react-native';
+import { AndroidHaptics, performAndroidHapticsAsync } from 'expo-haptics';
 import { renderRouter } from 'expo-router/testing-library';
+import { expectAccessibleControls } from '@/test-utils/a11y';
 import { Alert } from 'react-native';
 
 // Same mocks as shell.test.tsx: a real in-memory DB with the real migrations, seeded like at
@@ -29,8 +32,10 @@ const { db } = jest.requireMock('@/db/client') as { db: Db };
 const setupUser = () => userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
 
 let alertSpy: jest.SpyInstance;
+const haptic = jest.mocked(performAndroidHapticsAsync);
 
 beforeEach(() => {
+  haptic.mockClear();
   jest.mocked(useDatabaseSetup).mockReturnValue({ ready: true, error: null });
   alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 });
@@ -84,8 +89,10 @@ async function addExerciseByName(
   await user.press(screen.getByRole('button', { name: 'Add Exercise' }));
   // the list only renders its first rows, so find the exercise the way a user would
   await user.type(screen.getByLabelText('Search exercises'), name);
+  expectAccessibleControls();
   await user.press(screen.getByText(name));
   if (mode) {
+    expectAccessibleControls();
     await user.press(
       screen.getByRole('button', {
         name: mode === 'attempts' ? 'Fixed attempts — log makes' : 'Fixed makes — log attempts',
@@ -105,12 +112,14 @@ test('start, add a drill and type a value: FG% and the DB follow before blur', a
   expect(app.getPathname()).toBe('/active-workout');
   expect(screen.getByRole('header', { name: 'Morning Workout' })).toBeOnTheScreen();
   expect(screen.getByText('Add your first exercise')).toBeOnTheScreen();
+  expectAccessibleControls();
 
   await addExerciseByName(user, 'Free Throws', 'attempts');
   expect(app.getPathname()).toBe('/active-workout');
   expect(screen.getByText('Fixed attempts · log makes')).toBeOnTheScreen();
   expect(screen.getByLabelText('Set 1 attempts')).toHaveDisplayValue('10');
   expect(fg(1)).toHaveTextContent('—');
+  expectAccessibleControls();
 
   const makes = screen.getByLabelText('Set 1 makes');
   await fireEvent(makes, 'focus');
@@ -119,6 +128,8 @@ test('start, add a drill and type a value: FG% and the DB follow before blur', a
   expect(fg(1)).toHaveTextContent('70%');
   expect(session().exercises[0].sets[0].loggedValue).toBe(7);
   expect(screen.getByText('Total: 7 makes / 10 attempts · 70%')).toBeOnTheScreen();
+  // no haptic on keystrokes, taps or navigation
+  expect(haptic).not.toHaveBeenCalled();
 });
 
 test('an invalid entry is rolled back on blur, in the DB and on screen, with the reason', async () => {
@@ -145,6 +156,8 @@ test('an invalid entry is rolled back on blur, in the DB and on screen, with the
   expect(makes).toHaveDisplayValue('7');
   expect(fg(1)).toHaveTextContent('70%');
   expect(screen.getByText("Makes can't exceed attempts.")).toBeOnTheScreen();
+  expect(haptic.mock.calls).toEqual([[AndroidHaptics.Reject]]);
+  expectAccessibleControls();
 });
 
 test('sets: Add Set copies the target, a set can be deleted by swiping it', async () => {
@@ -173,6 +186,7 @@ test('sets: Add Set copies the target, a set can be deleted by swiping it', asyn
 
   expect(session().exercises[0].sets).toHaveLength(1);
   expect(screen.queryByLabelText('Set 2 makes')).toBeNull();
+  expect(haptic.mock.calls).toEqual([[AndroidHaptics.Confirm]]);
 
   // the last set stays: its row can't be swiped away
   expect(screen.getByTestId('set-1')).toHaveProp('accessibilityActions', []);
@@ -190,6 +204,7 @@ test('a check drill: ✓ toggles on and off', async () => {
 
   const toggle = screen.getByRole('checkbox', { name: 'Set 1 done' });
   expect(toggle).not.toBeChecked();
+  expectAccessibleControls();
 
   await user.press(toggle);
   expect(session().exercises[0].sets[0].completed).toBe(true);
@@ -197,6 +212,7 @@ test('a check drill: ✓ toggles on and off', async () => {
 
   await user.press(screen.getByRole('checkbox', { name: 'Set 1 done' }));
   expect(session().exercises[0].sets[0].completed).toBe(false);
+  expect(haptic).not.toHaveBeenCalled();
 });
 
 test('exercises: move one up and remove another after confirming', async () => {
@@ -209,6 +225,7 @@ test('exercises: move one up and remove another after confirming', async () => {
   expect(names()).toEqual(['Free Throws', 'Figure 8']);
 
   await user.press(screen.getByRole('button', { name: 'Figure 8 menu' }));
+  expectAccessibleControls();
   await user.press(screen.getByRole('button', { name: 'Move up' }));
   expect(names()).toEqual(['Figure 8', 'Free Throws']);
 
@@ -272,9 +289,11 @@ test('minimize shows the banner on every tab, and it survives an app kill', asyn
   expect(first.getPathname()).toBe('/');
   expect(screen.getByText('Workout in progress')).toBeOnTheScreen();
   expect(screen.getByRole('button', { name: 'Resume Workout' })).toBeOnTheScreen();
+  expectAccessibleControls();
   for (const tab of ['Exercises', 'History', 'Workout']) {
     await user.press(screen.getByRole('tab', { name: tab }));
     expect(screen.getByText('Workout in progress')).toBeOnTheScreen();
+    expectAccessibleControls();
   }
 
   // kill the app: unmount, then start over on the same DB
@@ -307,15 +326,21 @@ test('finish: confirmation, then the summary, then Done', async () => {
   expect(lastAlert().title).toBe('Finish workout?');
   expect(lastAlert().message).toBe("1 empty set won't count.");
   expect(getInProgressSession(db)).toBeDefined();
+  expect(haptic).not.toHaveBeenCalled();
   await pressAlert('Finish');
+  expect(haptic.mock.calls).toEqual([[AndroidHaptics.Confirm]]);
 
   expect(app.getPathname()).toMatch(/^\/workout-summary\/\d+$/);
   expect(getInProgressSession(db)).toBeUndefined();
-  expect(screen.getByText('70%')).toBeOnTheScreen();
+  // the session total and the exercise's line, both good
+  const [total, line] = screen.getAllByText('70%');
+  expect(total).toHaveStyle({ color: colors.success });
+  expect(line).toHaveStyle({ color: colors.success });
   expect(screen.getByText('7 makes / 10 attempts')).toBeOnTheScreen();
   expect(screen.getByText('1 / 1')).toBeOnTheScreen();
   expect(screen.getByText('7 / 10 · 70%')).toBeOnTheScreen();
   expect(screen.getByText('1 / 1 done')).toBeOnTheScreen();
+  expectAccessibleControls();
 
   await user.press(screen.getByRole('button', { name: 'Done' }));
 
@@ -324,6 +349,26 @@ test('finish: confirmation, then the summary, then Done', async () => {
   expect(screen.getByRole('button', { name: 'Start Empty Workout' })).toBeOnTheScreen();
   await user.press(screen.getByRole('tab', { name: 'History' }));
   expect(screen.getByText('1 workout logged')).toBeOnTheScreen();
+});
+
+test('a Finish the DB refuses stays on the workout, with no haptic', async () => {
+  const app = await launch();
+  const user = setupUser();
+  await startWorkout(user);
+  await addExerciseByName(user, 'Free Throws', 'attempts');
+  const makes = screen.getByLabelText('Set 1 makes');
+  await fireEvent(makes, 'focus');
+  await fireEvent.changeText(makes, '7');
+  await fireEvent(makes, 'blur');
+  await user.press(screen.getByRole('button', { name: 'Finish' }));
+
+  // the exercise goes away behind the question: finishing an empty workout is refused
+  db.delete(sessionExercises).run();
+  await pressAlert('Finish');
+
+  expect(app.getPathname()).toBe('/active-workout');
+  expect(getInProgressSession(db)).toBeDefined();
+  expect(haptic).not.toHaveBeenCalled();
 });
 
 test('finish with nothing logged offers only Discard and Keep going', async () => {

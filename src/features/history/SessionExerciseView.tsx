@@ -1,6 +1,7 @@
 import { AppText } from '@/components/AppText';
 import { Card } from '@/components/Card';
-import { setFgPct } from '@/domain/fg';
+import { fgTone } from '@/components/fgTone';
+import { fgBand, setFgPct } from '@/domain/fg';
 import { formatFgPct } from '@/domain/format';
 import { summarizeExercise } from '@/domain/summary';
 import { spacing } from '@/theme/spacing';
@@ -39,7 +40,10 @@ export function SessionExerciseView({ exercise }: { exercise: SessionExerciseDet
       </View>
       {summary.trackingType === 'makes_attempts' && summary.attempts > 0 && (
         <AppText tone="muted">
-          Total: {summary.makes} makes / {summary.attempts} attempts · {formatFgPct(summary.fgPct)}
+          Total: {summary.makes} makes / {summary.attempts} attempts ·{' '}
+          <AppText tone={fgTone(fgBand(summary.fgPct), 'muted')}>
+            {formatFgPct(summary.fgPct)}
+          </AppText>
         </AppText>
       )}
       {exercise.note !== '' && (
@@ -89,7 +93,11 @@ function ShootingRow({
         </AppText>
       </View>
       <View style={setTable.fgColumn}>
-        <AppText variant="label" tone="muted" accessibilityLabel={`Set ${number} FG%`}>
+        <AppText
+          variant="label"
+          tone={fgTone(fgBand(fg), 'muted')}
+          accessibilityLabel={`Set ${number} FG%`}
+        >
           {formatFgPct(fg)}
         </AppText>
       </View>

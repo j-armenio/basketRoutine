@@ -1,3 +1,4 @@
+import { haptics } from '@/components/haptics';
 import type { DomainErrorReason } from '@/domain/errors';
 import type { TargetMode } from '@/domain/types';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -25,7 +26,8 @@ interface UseNumberCellOptions {
  * keystroke that leaves the set valid is saved at once. An invalid one is neither saved nor
  * marked (it is often a prefix of a valid value: "12" passes through "1"). On blur, or when the
  * cell unmounts, an invalid draft is rolled back to the value the cell had at focus (a prefix
- * may have been saved on the way).
+ * may have been saved on the way). The rollback on blur plays a reject haptic (the user may not be
+ * looking); the one on unmount and a write refused on a keystroke stay silent.
  */
 export function useNumberCell(options: UseNumberCellOptions) {
   const { set, field } = options;
@@ -77,7 +79,10 @@ export function useNumberCell(options: UseNumberCellOptions) {
   const onBlur = () => {
     const reason = settle();
     setDraft(null);
-    if (reason) options.onRejected(reason);
+    if (reason) {
+      haptics.reject();
+      options.onRejected(reason);
+    }
   };
 
   const text = draft ?? (stored === null ? '' : String(stored));

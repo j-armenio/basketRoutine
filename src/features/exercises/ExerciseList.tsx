@@ -34,7 +34,12 @@ export function ExerciseList({
       keyboardShouldPersistTaps="handled"
       stickySectionHeadersEnabled={false}
       renderSectionHeader={({ section }) => (
-        <AppText variant="label" tone="muted" style={styles.sectionHeader}>
+        <AppText
+          variant="label"
+          tone="muted"
+          accessibilityRole="header"
+          style={styles.sectionHeader}
+        >
           {section.title}
         </AppText>
       )}

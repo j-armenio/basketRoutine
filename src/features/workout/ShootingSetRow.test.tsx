@@ -170,7 +170,25 @@ test('in makes mode a two-digit value passes through an invalid prefix with no e
 
   expect(stored().loggedValue).toBe(12);
   expect(screen.queryByText("Makes can't exceed attempts.")).toBeNull();
-  expect(screen.getByLabelText('Set 1 FG%')).toHaveTextContent('42%');
+  expect(screen.getByLabelText('Set 1 FG%')).toHaveTextContent('41.7%');
+});
+
+test('the FG% is colored by its band as the value changes', async () => {
+  await setup('attempts');
+  const makes = screen.getByLabelText('Set 1 makes');
+  const fg = () => screen.getByLabelText('Set 1 FG%');
+  expect(fg()).toHaveStyle({ color: colors.textMuted });
+
+  await fireEvent(makes, 'focus');
+  await fireEvent.changeText(makes, '7');
+  expect(fg()).toHaveTextContent('70%');
+  expect(fg()).toHaveStyle({ color: colors.success });
+
+  await fireEvent.changeText(makes, '5');
+  expect(fg()).toHaveStyle({ color: colors.textMuted });
+
+  await fireEvent.changeText(makes, '3');
+  expect(fg()).toHaveStyle({ color: colors.danger });
 });
 
 test('unmounting with an invalid draft rolls it back as well', async () => {

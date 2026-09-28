@@ -1,8 +1,9 @@
 import { AppText } from '@/components/AppText';
+import { fgTone } from '@/components/fgTone';
 import { NumberInput } from '@/components/NumberInput';
 import { SwipeToDelete } from '@/components/SwipeToDelete';
 import type { DomainErrorReason } from '@/domain/errors';
-import { setFgPct } from '@/domain/fg';
+import { fgBand, setFgPct } from '@/domain/fg';
 import { formatFgPct } from '@/domain/format';
 import { reasonMessage } from '@/domain/messages';
 import type { TargetMode } from '@/domain/types';
@@ -54,7 +55,7 @@ export function ShootingSetRow({ set, number, targetMode, deletable }: ShootingS
       testID={`set-${number}`}
       enabled={deletable}
       deleteLabel={`Delete set ${number}`}
-      onDelete={() => deleteSet(set.id)}
+      onDelete={() => deleteSet(set.id).ok}
     >
       <View style={styles.container}>
         <View style={setTable.row}>
@@ -85,7 +86,11 @@ export function ShootingSetRow({ set, number, targetMode, deletable }: ShootingS
             />
           </View>
           <View style={setTable.fgColumn}>
-            <AppText variant="label" tone="muted" accessibilityLabel={`Set ${number} FG%`}>
+            <AppText
+              variant="label"
+              tone={fgTone(fgBand(fg), 'muted')}
+              accessibilityLabel={`Set ${number} FG%`}
+            >
               {formatFgPct(fg)}
             </AppText>
           </View>

@@ -37,7 +37,12 @@ export default function HistoryScreen() {
           stickySectionHeadersEnabled={false}
           ItemSeparatorComponent={Separator}
           renderSectionHeader={({ section }) => (
-            <AppText variant="label" tone="muted" style={styles.sectionHeader}>
+            <AppText
+              variant="label"
+              tone="muted"
+              accessibilityRole="header"
+              style={styles.sectionHeader}
+            >
               {section.title}
             </AppText>
           )}
