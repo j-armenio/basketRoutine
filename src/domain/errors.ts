@@ -11,7 +11,8 @@ export type DataReason =
   | 'session_not_finished'
   | 'invalid_order'
   | 'invalid_set_count'
-  | 'empty_workout';
+  | 'empty_workout'
+  | 'media_not_saved';
 
 export type DomainErrorReason = ValidationReason | DataReason;
 

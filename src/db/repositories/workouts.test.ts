@@ -6,6 +6,7 @@ import { seedExercises } from '../seed/seed';
 import { createTestDb } from '../test-utils';
 import { archiveCustomExercise, createCustomExercise } from './exercises';
 import { createRoutine } from './routines';
+import { getSessionDetail, startSessionFromWorkout } from './sessions';
 import {
   addWorkoutExercise,
   archiveWorkout,
@@ -295,4 +296,84 @@ describe('saveWorkout', () => {
 test('replaceWorkoutExercises needs at least one exercise', () => {
   const { db, workout } = setup();
   expect(reasonOf(() => replaceWorkoutExercises(db, workout.id, []))).toBe('empty_workout');
+});
+
+describe('archiving a custom exercise', () => {
+  function withCustom() {
+    const { db, routine, workout } = setup();
+    const custom = createCustomExercise(db, {
+      name: 'Mine',
+      category: 'shooting',
+      trackingType: 'makes_attempts',
+    });
+    const other = createWorkout(db, routine.id, 'Other');
+    // W: Figure 8, Mine, Crossover. Other: Mine only.
+    addWorkoutExercise(db, workout.id, exerciseId(db, 'figure_8'), { targetValues: [null] });
+    addWorkoutExercise(db, workout.id, custom.id, {
+      targetMode: 'attempts',
+      targetValues: [5, 5],
+    });
+    addWorkoutExercise(db, workout.id, exerciseId(db, 'crossover'), { targetValues: [null] });
+    addWorkoutExercise(db, other.id, custom.id, { targetMode: 'makes', targetValues: [3] });
+    return { db, routine, workout, other, custom };
+  }
+
+  test('removes it, and its sets, from every template, keeping the others in order', () => {
+    const { db, workout, other, custom } = withCustom();
+    const setsBefore = db.select({ n: count() }).from(templateSets).get()!.n;
+
+    archiveCustomExercise(db, custom.id);
+
+    const names = (id: number) =>
+      getWorkoutWithExercises(db, id)!.exercises.map((e) => e.exercise.name);
+    expect(names(workout.id)).toEqual(['Figure 8', 'Crossover']);
+    expect(names(other.id)).toEqual([]);
+    // the removed exercises' 2 + 1 template sets went with them
+    expect(db.select({ n: count() }).from(templateSets).get()!.n).toBe(setsBefore - 3);
+  });
+
+  test('also removes it from an archived workout', () => {
+    const { db, other, custom } = withCustom();
+    archiveWorkout(db, other.id);
+
+    archiveCustomExercise(db, custom.id);
+
+    expect(getWorkoutWithExercises(db, other.id)!.exercises).toEqual([]);
+  });
+
+  test('a predefined or unknown exercise changes nothing', () => {
+    const { db, workout } = withCustom();
+    const before = getWorkoutWithExercises(db, workout.id);
+
+    expect(reasonOf(() => archiveCustomExercise(db, exerciseId(db, 'figure_8')))).toBe(
+      'exercise_read_only',
+    );
+    expect(reasonOf(() => archiveCustomExercise(db, 999))).toBe('not_found');
+
+    expect(getWorkoutWithExercises(db, workout.id)).toEqual(before);
+  });
+
+  test('the template can be saved again, and starting it gives a session without it', () => {
+    const { db, routine, workout, custom } = withCustom();
+    archiveCustomExercise(db, custom.id);
+    const template = getWorkoutWithExercises(db, workout.id)!;
+
+    saveWorkout(db, {
+      workoutId: workout.id,
+      routineId: routine.id,
+      name: 'W',
+      exercises: template.exercises.map((e) => ({
+        exerciseId: e.exerciseId,
+        targetMode: e.targetMode,
+        targetValues: e.sets.map((set) => set.targetValue),
+      })),
+    });
+
+    expect(getWorkoutWithExercises(db, workout.id)!.exercises).toHaveLength(2);
+    expect(
+      getSessionDetail(db, startSessionFromWorkout(db, workout.id).id)!.exercises.map(
+        (e) => e.name,
+      ),
+    ).toEqual(['Figure 8', 'Crossover']);
+  });
 });

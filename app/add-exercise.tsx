@@ -1,24 +1,19 @@
 import { ActionSheet } from '@/components/ActionSheet';
-import { AppText } from '@/components/AppText';
-import { EmptyState } from '@/components/EmptyState';
 import { IconButton } from '@/components/IconButton';
-import { ListItem } from '@/components/ListItem';
 import { Screen } from '@/components/Screen';
 import { TextField } from '@/components/TextField';
-import { db } from '@/db/client';
-import { listExercises } from '@/db/repositories/exercises';
 import type { Exercise } from '@/db/types';
 import { reasonMessage } from '@/domain/messages';
-import { CATEGORIES, CATEGORY_LABELS, type TargetMode } from '@/domain/types';
+import type { TargetMode } from '@/domain/types';
+import { ExerciseList } from '@/features/exercises/ExerciseList';
+import { useExercises } from '@/features/exercises/hooks';
 import { getDraft, updateDraft } from '@/features/routines/draftStore';
 import { addExercise as addToTemplate } from '@/features/routines/templateDraft';
 import { addExercise } from '@/features/workout/actions';
 import { useInProgressSession } from '@/features/workout/hooks';
-import { colors } from '@/theme/colors';
-import { spacing } from '@/theme/spacing';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { Alert, SectionList, StyleSheet } from 'react-native';
+import { useState } from 'react';
+import { Alert } from 'react-native';
 
 export default function AddExerciseScreen() {
   const router = useRouter();
@@ -31,13 +26,8 @@ export default function AddExerciseScreen() {
   const [search, setSearch] = useState('');
   const [pending, setPending] = useState<Exercise | null>(null);
 
-  const sections = useMemo(() => {
-    const found = listExercises(db, { search });
-    return CATEGORIES.map((category) => ({
-      title: CATEGORY_LABELS[category],
-      data: found.filter((exercise) => exercise.category === category),
-    })).filter((section) => section.data.length > 0);
-  }, [search]);
+  // Follows the data version: an exercise created from here shows up on return.
+  const sections = useExercises({ search });
 
   if (!toTemplate && !session) return mountedWithTarget ? null : <Redirect href="/" />;
   if (toTemplate && !mountedWithTarget) return <Redirect href="/" />;
@@ -65,6 +55,13 @@ export default function AddExerciseScreen() {
       scroll={false}
       bottomInset
       left={<IconButton icon="close" accessibilityLabel="Close" onPress={() => router.back()} />}
+      right={
+        <IconButton
+          icon="add"
+          accessibilityLabel="New exercise"
+          onPress={() => router.push('/edit-exercise')}
+        />
+      }
     >
       <TextField
         accessibilityLabel="Search exercises"
@@ -74,27 +71,7 @@ export default function AddExerciseScreen() {
         autoCorrect={false}
         returnKeyType="search"
       />
-      <SectionList
-        style={styles.list}
-        sections={sections}
-        keyExtractor={(exercise) => String(exercise.id)}
-        keyboardShouldPersistTaps="handled"
-        stickySectionHeadersEnabled={false}
-        renderSectionHeader={({ section }) => (
-          <AppText variant="label" tone="muted" style={styles.sectionHeader}>
-            {section.title}
-          </AppText>
-        )}
-        renderItem={({ item }) => (
-          <ListItem
-            title={item.name}
-            subtitle={item.trackingType === 'check' ? 'Check' : 'Makes / Attempts'}
-            rightIcon="add"
-            onPress={() => pick(item)}
-          />
-        )}
-        ListEmptyComponent={<EmptyState icon="search" title="No exercises found" />}
-      />
+      <ExerciseList sections={sections} rightIcon="add" onPressExercise={pick} />
       <ActionSheet
         visible={pending !== null}
         title={pending ? `${pending.name}: what do you fix?` : undefined}
@@ -115,17 +92,3 @@ export default function AddExerciseScreen() {
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  // Rows run edge to edge: the screen's own side padding is taken back.
-  list: {
-    flex: 1,
-    marginHorizontal: -spacing.lg,
-  },
-  sectionHeader: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xs,
-    backgroundColor: colors.background,
-  },
-});

@@ -606,6 +606,68 @@ describe('templates and sessions', () => {
     expect(getWorkoutWithExercises(db, workout.id)).toEqual(before);
   });
 
+  test('archiving a custom exercise leaves sessions alone, finished or in progress', () => {
+    const { db, workout } = setup();
+    const custom = createCustomExercise(db, {
+      name: 'Deep threes',
+      category: 'shooting',
+      trackingType: 'makes_attempts',
+    });
+    addWorkoutExercise(db, workout.id, custom.id, { targetMode: 'attempts', targetValues: [8] });
+    const finished = startSessionFromWorkout(db, workout.id);
+    const done = detailOf(db, finished.id).exercises[3];
+    updateSessionSet(db, done.sets[0].id, { loggedValue: 5 });
+    updateSessionExerciseNote(db, done.id, 'good');
+    finishSession(db, finished.id);
+    const running = startSessionFromWorkout(db, workout.id);
+    const before = [detailOf(db, finished.id), detailOf(db, running.id)];
+
+    archiveCustomExercise(db, custom.id);
+
+    expect([detailOf(db, finished.id), detailOf(db, running.id)]).toEqual(before);
+    expect(detailOf(db, running.id).exercises[3]).toMatchObject({ name: 'Deep threes' });
+  });
+
+  test('overwriteWorkoutFromSession leaves out an exercise deleted since, and copies the rest', () => {
+    const { db, workout } = setup();
+    const custom = createCustomExercise(db, {
+      name: 'Deep threes',
+      category: 'shooting',
+      trackingType: 'makes_attempts',
+    });
+    const session = startSessionFromWorkout(db, workout.id);
+    addSessionExercise(db, session.id, custom.id, 'attempts');
+    removeSessionExercise(db, detailOf(db, session.id).exercises[1].id); // Mikan Drill
+    finishSession(db, session.id);
+    archiveCustomExercise(db, custom.id);
+
+    overwriteWorkoutFromSession(db, session.id);
+
+    const template = getWorkoutWithExercises(db, workout.id)!;
+    expect(template.exercises.map((e) => e.exercise.name)).toEqual(['Free Throws', 'Figure 8']);
+    expect(template.exercises.map((e) => e.position)).toEqual([0, 1]);
+  });
+
+  test('overwriteWorkoutFromSession with only deleted exercises fails and keeps the template', () => {
+    const { db, workout } = setup();
+    const custom = createCustomExercise(db, {
+      name: 'Deep threes',
+      category: 'shooting',
+      trackingType: 'makes_attempts',
+    });
+    const session = startSessionFromWorkout(db, workout.id);
+    for (const exercise of detailOf(db, session.id).exercises) {
+      removeSessionExercise(db, exercise.id);
+    }
+    addSessionExercise(db, session.id, custom.id, 'attempts');
+    finishSession(db, session.id);
+    archiveCustomExercise(db, custom.id);
+    const before = getWorkoutWithExercises(db, workout.id);
+
+    expect(reasonOf(() => overwriteWorkoutFromSession(db, session.id))).toBe('empty_workout');
+    expect(getWorkoutWithExercises(db, workout.id)).toEqual(before);
+  });
+
   test('discardAndStartFromWorkout replaces the in-progress session', () => {
     const { db, workout } = setup();
     const old = startEmptySession(db, 'Old');

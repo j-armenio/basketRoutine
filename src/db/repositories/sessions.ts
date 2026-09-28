@@ -8,7 +8,7 @@ import { asc, count, desc, eq, max } from 'drizzle-orm';
 import { sessionExercises, sessionSets, sessions } from '../schema';
 import type { Db, Session, SessionExercise, SessionSet } from '../types';
 import { assertSameIds, assertValid, nextPosition, requireName } from './common';
-import { requireActiveExercise } from './exercises';
+import { archivedExerciseIds, requireActiveExercise } from './exercises';
 import { getWorkoutWithExercises, replaceWorkoutExercises, requireActiveWorkout } from './workouts';
 
 export function getInProgressSession(db: Db): Session | undefined {
@@ -327,7 +327,8 @@ export function finishSession(db: Db, id: number): SessionSummary {
 /**
  * Overwrites the template the finished session came from with the session's structure: the same
  * exercises, modes and target values (empty sets too), with no logged values or notes. Doesn't
- * touch the workout's name.
+ * touch the workout's name. Exercises deleted since (archived) are left out, since a template can't
+ * hold one; with nothing left it fails with `empty_workout`.
  */
 export function overwriteWorkoutFromSession(db: Db, sessionId: number): void {
   db.transaction((tx) => {
@@ -335,14 +336,20 @@ export function overwriteWorkoutFromSession(db: Db, sessionId: number): void {
     if (!detail || detail.workoutId === null) throw new DomainError('not_found');
     if (detail.status !== 'finished') throw new DomainError('session_not_finished');
     requireActiveWorkout(tx, detail.workoutId);
+    const archived = archivedExerciseIds(
+      tx,
+      detail.exercises.map((exercise) => exercise.exerciseId),
+    );
     replaceWorkoutExercises(
       tx,
       detail.workoutId,
-      detail.exercises.map((exercise) => ({
-        exerciseId: exercise.exerciseId,
-        targetMode: exercise.targetMode,
-        targetValues: exercise.sets.map((set) => set.targetValue),
-      })),
+      detail.exercises
+        .filter((exercise) => !archived.has(exercise.exerciseId))
+        .map((exercise) => ({
+          exerciseId: exercise.exerciseId,
+          targetMode: exercise.targetMode,
+          targetValues: exercise.sets.map((set) => set.targetValue),
+        })),
     );
   });
 }

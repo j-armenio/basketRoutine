@@ -48,6 +48,7 @@ export default function RootLayout() {
         >
           <Stack.Screen name="active-workout" options={{ animation: 'slide_from_bottom' }} />
           <Stack.Screen name="edit-workout" options={{ animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="edit-exercise" options={{ animation: 'slide_from_bottom' }} />
           <Stack.Screen name="add-exercise" options={{ presentation: 'modal' }} />
         </Stack>
         <StatusBar style="light" />

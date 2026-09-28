@@ -12,6 +12,7 @@ test('every reason has a message', () => {
     'target_mode_required',
     'target_mode_not_allowed',
     'value_not_allowed',
+    'invalid_media',
     'not_found',
     'empty_name',
     'exercise_read_only',
@@ -22,6 +23,7 @@ test('every reason has a message', () => {
     'invalid_order',
     'invalid_set_count',
     'empty_workout',
+    'media_not_saved',
   ] as const;
   for (const reason of reasons) expect(reasonMessage(reason)).not.toBe('');
 });

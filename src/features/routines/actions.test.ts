@@ -1,11 +1,12 @@
 /** @jest-environment node */
 import { exercises } from '@/db/schema';
 import { getInProgressSession, getSessionDetail } from '@/db/repositories/sessions';
-import { getWorkoutWithExercises, listWorkouts } from '@/db/repositories/workouts';
+import { getWorkout, getWorkoutWithExercises, listWorkouts } from '@/db/repositories/workouts';
 import { listRoutines } from '@/db/repositories/routines';
 import type { Db } from '@/db/types';
 import { eq } from 'drizzle-orm';
 import { subscribe, type ActionResult } from '../dataStore';
+import * as exerciseActions from '../exercises/actions';
 import * as workoutActions from '../workout/actions';
 import * as actions from './actions';
 
@@ -39,6 +40,8 @@ afterEach(() => {
   if (session) workoutActions.discardWorkout(session.id);
   notifications = 0;
 });
+
+const getWorkoutRoutineId = (workoutId: number) => getWorkout(db, workoutId)!.routineId;
 
 function buildWorkout(name = 'Shooting day') {
   const routine = unwrap(actions.createRoutine(`Routine of ${name}`));
@@ -154,6 +157,58 @@ describe('templateUpdateCandidate', () => {
     finish(session.id);
 
     expect(workoutActions.templateUpdateCandidate(session.id)).toBeUndefined();
+  });
+
+  describe('with an exercise deleted while the session was running', () => {
+    function startWithCustom() {
+      const { workout } = buildWorkout();
+      const custom = unwrap(
+        exerciseActions.createExercise({
+          name: 'Deep threes',
+          category: 'shooting',
+          trackingType: 'makes_attempts',
+        }),
+      );
+      const routineId = getWorkoutRoutineId(workout.id);
+      unwrap(
+        actions.saveWorkout({
+          workoutId: workout.id,
+          routineId,
+          name: workout.name,
+          exercises: [
+            ...getWorkoutWithExercises(db, workout.id)!.exercises.map((e) => ({
+              exerciseId: e.exerciseId,
+              targetMode: e.targetMode,
+              targetValues: e.sets.map((set) => set.targetValue),
+            })),
+            { exerciseId: custom.id, targetMode: 'attempts', targetValues: [8] },
+          ],
+        }),
+      );
+      const session = unwrap(workoutActions.startWorkoutFromTemplate(workout.id));
+      unwrap(exerciseActions.deleteExercise(custom.id));
+      return { workout, session };
+    }
+
+    test('that alone is no difference, so nothing is offered', () => {
+      const { session } = startWithCustom();
+      finish(session.id);
+
+      expect(workoutActions.templateUpdateCandidate(session.id)).toBeUndefined();
+    });
+
+    test('a real difference is still offered, and applying it copies the rest', () => {
+      const { workout, session } = startWithCustom();
+      unwrap(workoutActions.addSet(getSessionDetail(db, session.id)!.exercises[0].id));
+      finish(session.id);
+
+      expect(workoutActions.templateUpdateCandidate(session.id)).toMatchObject({ id: workout.id });
+      unwrap(workoutActions.updateTemplateFromSession(session.id));
+
+      const template = getWorkoutWithExercises(db, workout.id)!;
+      expect(template.exercises.map((e) => e.exercise.name)).toEqual(['Free Throws', 'Figure 8']);
+      expect(template.exercises[0].sets).toHaveLength(3);
+    });
   });
 
   test('is nothing for an unknown session, and reading it does not notify', () => {

@@ -7,6 +7,7 @@ const MESSAGES: Record<DomainErrorReason, string> = {
   target_mode_required: 'Choose what this exercise fixes: makes or attempts.',
   target_mode_not_allowed: "This exercise doesn't have a target mode.",
   value_not_allowed: "This exercise doesn't take values.",
+  invalid_media: "That file can't be used as media.",
   not_found: 'That item no longer exists.',
   empty_name: "The name can't be empty.",
   exercise_read_only: "Predefined exercises can't be edited.",
@@ -17,6 +18,7 @@ const MESSAGES: Record<DomainErrorReason, string> = {
   invalid_order: 'The order is out of date.',
   invalid_set_count: 'An exercise needs at least one set.',
   empty_workout: 'Add at least one exercise.',
+  media_not_saved: "Couldn't save the media. Try another file.",
 };
 
 /** A message for the user; a `Record` over every reason, so a new reason fails `typecheck`. */

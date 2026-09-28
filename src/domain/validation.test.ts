@@ -1,6 +1,7 @@
 import {
   validateExerciseConfig,
   validateLoggedValue,
+  validateMediaUri,
   validateSet,
   validateTargetValue,
 } from './validation';
@@ -102,5 +103,27 @@ describe('validateSet', () => {
     expect(check(null, null)).toEqual({ ok: true });
     expect(check(3, null)).toEqual({ ok: false, reason: 'value_not_allowed' });
     expect(check(null, 1)).toEqual({ ok: false, reason: 'value_not_allowed' });
+  });
+});
+
+describe('validateMediaUri', () => {
+  test.each([
+    '',
+    '   ',
+    'file:///data/user/0/app/files/exercise-media/1.gif',
+    'file:///a/b.JPG',
+    'file:///a/b.mp4',
+  ])('accepts %j', (v) => {
+    expect(validateMediaUri(v)).toEqual({ ok: true });
+  });
+  test.each([
+    'https://x.com/a.gif',
+    '/a/b.gif',
+    'file:///a/b',
+    'file:///a/b.pdf',
+    'file:///a b.gif',
+    ' file:///a/b.gif',
+  ])('rejects %j', (v) => {
+    expect(validateMediaUri(v)).toEqual({ ok: false, reason: 'invalid_media' });
   });
 });

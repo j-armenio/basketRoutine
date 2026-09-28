@@ -16,6 +16,7 @@ import {
   updateSessionSet,
   type SessionSetPatch,
 } from '@/db/repositories/sessions';
+import { archivedExerciseIds } from '@/db/repositories/exercises';
 import { getWorkout, getWorkoutWithExercises } from '@/db/repositories/workouts';
 import { defaultWorkoutName } from '@/domain/defaults';
 import { sameStructure, structureFromSession, structureFromTemplate } from '@/domain/template';
@@ -79,7 +80,9 @@ export function updateTemplateFromSession(sessionId: number) {
 
 /**
  * The template to offer to update after a Finish: the session's workout, if it is still active
- * and its structure differs from the session's. Reads by id, since after Finish the screen has no
+ * and its structure differs from the session's. Exercises deleted since are left out of the
+ * session's side (a template can't hold them, see `overwriteWorkoutFromSession`), so they alone
+ * don't count as a difference, and a session with nothing else to copy offers nothing. Reads by id, since after Finish the screen has no
  * in-progress session left. Doesn't notify.
  */
 export function templateUpdateCandidate(sessionId: number) {
@@ -89,7 +92,13 @@ export function templateUpdateCandidate(sessionId: number) {
   if (!workout || workout.archivedAt) return undefined;
   const template = getWorkoutWithExercises(db, workout.id);
   if (!template) return undefined;
-  return sameStructure(structureFromSession(session), structureFromTemplate(template))
+  const archived = archivedExerciseIds(
+    db,
+    session.exercises.map((exercise) => exercise.exerciseId),
+  );
+  const kept = session.exercises.filter((exercise) => !archived.has(exercise.exerciseId));
+  if (kept.length === 0) return undefined;
+  return sameStructure(structureFromSession({ exercises: kept }), structureFromTemplate(template))
     ? undefined
     : workout;
 }

@@ -21,7 +21,7 @@ This is a high-level plan. Each phase gets its own detailed plan before developm
 
 - **Routine** — a named folder that groups workout templates (e.g., "Pre-season").
 - **Workout (template)** — belongs to a Routine; ordered list of exercises with planned sets.
-- **Exercise (catalog)** — name, category, text description, optional media URL (GIF/video), `isCustom` flag, **`trackingType`**:
+- **Exercise (catalog)** — name, category, text description, optional main media (image, GIF or short video, picked from the phone and stored with the app; predefined ones ship with the app), `isCustom` flag, **`trackingType`**:
   - `makes_attempts` — shooting drills, FG% applies.
   - `check` — non-shooting drills (ball handling, footwork…), set is just marked done.
   - Extensible later (reps, time).
@@ -98,14 +98,15 @@ Phases are ordered so a usable prototype (empty workout logged on the court) exi
 - **Done when:** past sessions are browsable and can be deleted.
 
 ### Phase 6 — Exercise Catalog
-- Browse by category, search, exercise detail with description and GIF/video preview (text fallback).
-- Create / edit / delete custom exercises, choosing the tracking type (predefined ones are read-only, or duplicated to customize).
+- Browse by category, search; every exercise shows its main media (image, GIF or short video) next to its name, or a placeholder; the detail shows it larger, with the description.
+- Create / edit / delete custom exercises, choosing the tracking type and picking the media from the phone's gallery (predefined ones are read-only, media included).
 - **Done when:** user can find any exercise and create a custom one.
 
 ### Phase 7 — Polish, Testing & Release
 - E2E tests of the main flow (create routine → start → log → finish → history).
 - UX polish: empty states, haptics, accessibility labels, app icon and splash, and FG% coloring (success/danger by FG% on set rows, totals and the summary; asked for after the first court session).
 - Performance check on the target phone during a long session.
+- Known issues carried over: the exercise list's hold-to-play preview stops when the finger moves while holding (from Phase 6).
 - Release APK installed on the phone.
 - **Done when:** v1.0 APK is installed and used in a real training session.
 
@@ -123,7 +124,7 @@ Phases are ordered so a usable prototype (empty workout logged on the court) exi
 ## 6. Risks & Mitigations
 - **Data loss on the court** → every input saved immediately; interrupted sessions can be resumed.
 - **Data lost on uninstall** (no manual backup in v1) → accepted trade-off. Android Auto Backup stays at its default (enabled) as a best-effort safety net; no work is spent on it.
-- **Media links break / no internet in the gym** → media optional; text description as fallback.
+- **No internet in the gym** → media is stored on the phone (or ships with the app), never loaded from the web; a placeholder when an exercise has none.
 - **Set logging awkward on the court** → validated early with the Phase 3 prototype (on the phone before templates are built, and on the court while they are).
 - **Broken history after deletes** → session snapshots + archiving instead of hard deletes.
 - **Scope creep** → backlog items only after Phase 7.

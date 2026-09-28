@@ -1,6 +1,11 @@
 export const TRACKING_TYPES = ['makes_attempts', 'check'] as const;
 export type TrackingType = (typeof TRACKING_TYPES)[number];
 
+export const TRACKING_LABELS: Record<TrackingType, string> = {
+  makes_attempts: 'Makes / Attempts',
+  check: 'Check',
+};
+
 export const TARGET_MODES = ['makes', 'attempts'] as const;
 export type TargetMode = (typeof TARGET_MODES)[number];
 

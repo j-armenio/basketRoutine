@@ -1,3 +1,4 @@
+import { mediaKind } from './media';
 import type { TargetMode, TrackingType } from './types';
 
 export type ValidationReason =
@@ -6,7 +7,8 @@ export type ValidationReason =
   | 'makes_exceed_attempts'
   | 'target_mode_required'
   | 'target_mode_not_allowed'
-  | 'value_not_allowed';
+  | 'value_not_allowed'
+  | 'invalid_media';
 
 export type ValidationResult = { ok: true } | { ok: false; reason: ValidationReason };
 
@@ -25,6 +27,17 @@ export function validateTargetValue(targetValue: number): ValidationResult {
 export function validateLoggedValue(loggedValue: number | null): ValidationResult {
   if (loggedValue === null) return OK;
   return Number.isInteger(loggedValue) && loggedValue >= 0 ? OK : fail('invalid_logged_value');
+}
+
+/**
+ * An exercise's stored media: blank means none, anything else must be a `file://` URI (the media
+ * lives in the app's storage) of a supported kind. Doesn't trim: the repository does that.
+ */
+export function validateMediaUri(value: string): ValidationResult {
+  if (value.trim() === '') return OK;
+  return /^file:\/\/\S+$/i.test(value) && mediaKind(value) !== undefined
+    ? OK
+    : fail('invalid_media');
 }
 
 /** `check` exercises have no target mode; `makes_attempts` ones require one. */
