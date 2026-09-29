@@ -73,8 +73,9 @@ function DialogBody({
         onPress={onClose}
       />
       <View style={styles.dialog}>
-        <AppText variant="heading">{title}</AppText>
+        <AppText variant="cardTitle">{title}</AppText>
         <TextField
+          variant="raised"
           accessibilityLabel="Name"
           value={name}
           onChangeText={setName}
@@ -96,15 +97,15 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     justifyContent: 'center',
-    padding: spacing.lg,
+    padding: spacing.screenPadding,
   },
   backdrop: {
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: colors.scrim,
   },
   dialog: {
-    padding: spacing.lg,
+    padding: spacing.cardPadding,
     gap: spacing.lg,
-    borderRadius: radius.lg,
+    borderRadius: radius.card,
     backgroundColor: colors.surface,
   },
   actions: {

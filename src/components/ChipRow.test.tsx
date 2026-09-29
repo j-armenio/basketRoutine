@@ -30,3 +30,21 @@ test('a disabled row keeps its selection and ignores taps', async () => {
   expect(screen.getByRole('radio', { name: 'All' })).toBeSelected();
   expect(screen.getByRole('radio', { name: 'Shooting' })).toBeDisabled();
 });
+
+test('the selected chip has a check icon, so color is not the only signal', async () => {
+  await render(<ChipRow options={options} value="shooting" onChange={jest.fn()} />);
+
+  expect(screen.getByTestId('Shooting selected')).toBeOnTheScreen();
+  expect(screen.queryByTestId('All selected')).toBeNull();
+});
+
+test('wraps onto lines instead of scrolling when asked', async () => {
+  const { rerender } = await render(
+    <ChipRow options={options} value="all" onChange={jest.fn()} wrap />,
+  );
+  const group = () => screen.getByRole('radio', { name: 'All' }).parent;
+  expect(group()).toHaveStyle({ flexWrap: 'wrap' });
+
+  await rerender(<ChipRow options={options} value="all" onChange={jest.fn()} />);
+  expect(group()).not.toHaveStyle({ flexWrap: 'wrap' });
+});

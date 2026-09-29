@@ -1,21 +1,28 @@
 import { ActionSheet, type ActionSheetOption } from '@/components/ActionSheet';
 import { AppText } from '@/components/AppText';
+import { BottomActionBar } from '@/components/BottomActionBar';
 import { EmptyState } from '@/components/EmptyState';
+import { Icon } from '@/components/Icon';
 import { IconButton } from '@/components/IconButton';
 import { Screen } from '@/components/Screen';
 import { reasonMessage } from '@/domain/messages';
 import { CATEGORY_LABELS, TRACKING_LABELS } from '@/domain/types';
 import { deleteExercise, exerciseUsage } from '@/features/exercises/actions';
+import { ExerciseStatsCard } from '@/features/exercises/ExerciseStatsCard';
 import { exerciseMedia } from '@/features/exercises/mediaSource';
 import { MediaView } from '@/features/exercises/MediaView';
 import { useExercise } from '@/features/exercises/hooks';
 import { leaveScreen } from '@/features/workout/navigation';
-import { radius } from '@/theme/spacing';
+import { colors } from '@/theme/colors';
+import { radius, size, spacing } from '@/theme/spacing';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 
-/** An exercise: its media, large and playing, and its description. Custom ones can be edited and deleted. */
+/**
+ * An exercise: its media, large and playing, its description and the user's stats with it, and
+ * Add to Routine. Custom ones can be edited and deleted.
+ */
 export default function ExerciseDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -31,7 +38,7 @@ export default function ExerciseDetailScreen() {
   if (!exercise) {
     if (mountedWithExercise) return null;
     return (
-      <Screen title="Exercise" left={back} bottomInset>
+      <Screen title="Exercise" titleVariant="titleLarge" left={back} bottomInset>
         <EmptyState
           icon="sports_basketball"
           title="Exercise not found"
@@ -72,6 +79,7 @@ export default function ExerciseDetailScreen() {
   return (
     <Screen
       title={exercise.name}
+      titleVariant="titleLarge"
       subtitle={`${CATEGORY_LABELS[exercise.category]} · ${TRACKING_LABELS[exercise.trackingType]}`}
       left={back}
       right={
@@ -79,10 +87,18 @@ export default function ExerciseDetailScreen() {
         exercise.isCustom && (
           <IconButton
             icon="more_vert"
+            color={colors.iconMuted}
             accessibilityLabel="Exercise menu"
             onPress={() => setMenuOpen(true)}
           />
         )
+      }
+      footer={
+        <BottomActionBar
+          label="Add to Routine"
+          icon="playlist_add"
+          onPress={() => router.push(`/add-to-routine?exerciseId=${exercise.id}`)}
+        />
       }
       bottomInset
     >
@@ -92,20 +108,24 @@ export default function ExerciseDetailScreen() {
           playing
           controls
           fit="contain"
-          iconSize={48}
+          iconSize={size.placeholderIcon}
           style={styles.media}
         />
       </View>
       {exercise.description === '' ? (
-        <AppText tone="muted">No description.</AppText>
+        <AppText tone="secondary">No description.</AppText>
       ) : (
         <AppText>{exercise.description}</AppText>
       )}
       {!exercise.isCustom && (
-        <AppText variant="caption" tone="muted">
-          Predefined exercise. It can&apos;t be edited.
-        </AppText>
+        <View style={styles.predefined}>
+          <Icon name="lock" size={size.iconSmall} color={colors.textSecondary} />
+          <AppText variant="caption" tone="secondary">
+            Predefined exercise. It can&apos;t be edited.
+          </AppText>
+        </View>
       )}
+      <ExerciseStatsCard exerciseId={exercise.id} trackingType={exercise.trackingType} />
       <ActionSheet
         visible={menuOpen}
         title={exercise.name}
@@ -119,7 +139,12 @@ export default function ExerciseDetailScreen() {
 const styles = StyleSheet.create({
   media: {
     width: '100%',
-    height: 240,
-    borderRadius: radius.md,
+    height: size.mediaHero,
+    borderRadius: radius.card,
+  },
+  predefined: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
 });

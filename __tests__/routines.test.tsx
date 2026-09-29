@@ -495,7 +495,7 @@ describe('starting from a template', () => {
     await user.clear(makes);
     await user.type(makes, '7');
     await user.press(screen.getByRole('checkbox', { name: 'Set 1 done' }));
-    await user.press(screen.getByRole('button', { name: 'Finish' }));
+    await user.press(screen.getByRole('button', { name: 'Finish Workout' }));
     await pressAlert('Finish');
 
     expect(app.getPathname()).toMatch(/^\/workout-summary\/\d+$/);
@@ -512,7 +512,7 @@ describe('starting from a template', () => {
     const makes = screen.getByLabelText('Set 1 makes');
     await user.clear(makes);
     await user.type(makes, '7');
-    await user.press(screen.getByRole('button', { name: 'Finish' }));
+    await user.press(screen.getByRole('button', { name: 'Finish Workout' }));
     await pressAlert('Finish');
   }
 
@@ -621,7 +621,7 @@ describe('starting from a template', () => {
     const makes = screen.getByLabelText('Set 1 makes');
     await user.clear(makes);
     await user.type(makes, '7');
-    await user.press(screen.getByRole('button', { name: 'Finish' }));
+    await user.press(screen.getByRole('button', { name: 'Finish Workout' }));
     await pressAlert('Finish');
 
     expect(app.getPathname()).toMatch(/^\/workout-summary\/\d+$/);

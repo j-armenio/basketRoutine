@@ -1,5 +1,5 @@
 import { fgBand, type FgBand } from '@/domain/fg';
-import { formatFgPct, formatMonth } from '@/domain/format';
+import { formatFgPct, formatMonth, formatShortDate } from '@/domain/format';
 import { summarizeSession } from '@/domain/summary';
 import type { SessionSummary, SummaryExercise } from '@/domain/summary';
 
@@ -66,4 +66,53 @@ export function groupByMonth(items: HistoryItem[]): HistorySection[] {
     else sections.set(title, { title, data: [item] });
   }
   return [...sections.values()];
+}
+
+/** A finished session on the FG% evolution chart. */
+export interface FgPoint {
+  id: number;
+  name: string;
+  startedAt: Date;
+  /** The session's overall FG%, as a ratio. */
+  fgPct: number;
+}
+
+/**
+ * The last `count` sessions that have a shooting set, oldest first, for the FG% evolution chart.
+ * Sessions with only check drills have no FG% and are left out. `items` is newest first.
+ */
+export function fgEvolution(items: HistoryItem[], count: number): FgPoint[] {
+  const points: FgPoint[] = [];
+  for (const item of items) {
+    if (points.length === count) break;
+    const { fgPct } = item.summary.shooting;
+    if (item.summary.shooting.attempts === 0 || fgPct === null) continue;
+    points.push({ id: item.id, name: item.name, startedAt: item.startedAt, fgPct });
+  }
+  return points.reverse();
+}
+
+/**
+ * The chart's date labels: one per run of points on the same day, with the indexes of its first
+ * and last point, so the label sits under the middle of its run.
+ */
+export function chartDateLabels(
+  points: FgPoint[],
+): { label: string; first: number; last: number }[] {
+  const labels: { label: string; first: number; last: number }[] = [];
+  points.forEach((point, index) => {
+    const label = formatShortDate(point.startedAt);
+    const current = labels.at(-1);
+    if (current?.label === label) current.last = index;
+    else labels.push({ label, first: index, last: index });
+  });
+  return labels;
+}
+
+/** What the chart says to a screen reader: every point with its date, name and FG%. */
+export function fgEvolutionLabel(points: FgPoint[]): string {
+  const list = points
+    .map((point) => `${formatShortDate(point.startedAt)} ${point.name} ${formatFgPct(point.fgPct)}`)
+    .join(', ');
+  return `FG% over the last ${points.length === 1 ? 'workout' : `${points.length} workouts`}: ${list}`;
 }

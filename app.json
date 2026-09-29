@@ -7,13 +7,13 @@
     "icon": "./assets/images/icon.png",
     "scheme": "basketroutine",
     "userInterfaceStyle": "dark",
-    "backgroundColor": "#121212",
+    "backgroundColor": "#1E1E24",
     "platforms": ["android"],
     "android": {
       "package": "com.jarmenio.basketroutine",
-      "backgroundColor": "#121212",
+      "backgroundColor": "#1E1E24",
       "adaptiveIcon": {
-        "backgroundColor": "#121212",
+        "backgroundColor": "#F5F5F7",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       }
@@ -23,7 +23,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#121212",
+          "backgroundColor": "#1E1E24",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }

@@ -309,6 +309,23 @@ test('minimize shows the banner on every tab, and it survives an app kill', asyn
   expect(screen.getByText('felt good')).toBeOnTheScreen();
 });
 
+test('the header counts the time since the start, also after minimizing', async () => {
+  await launch();
+  const user = setupUser();
+  await startWorkout(user);
+
+  expect(screen.getByRole('timer', { name: 'Elapsed time 00:00' })).toBeOnTheScreen();
+  await act(() => jest.advanceTimersByTime(65_000));
+  expect(screen.getByRole('timer', { name: 'Elapsed time 01:05' })).toBeOnTheScreen();
+
+  await user.press(screen.getByRole('button', { name: 'Minimize' }));
+  await act(() => jest.advanceTimersByTime(60_000));
+  await user.press(screen.getByRole('button', { name: `Resume ${session().name}` }));
+
+  // read from the session's start, not from when the screen came back
+  expect(screen.getByRole('timer', { name: /^Elapsed time 02:0\d$/ })).toBeOnTheScreen();
+});
+
 test('finish: confirmation, then the summary, then Done', async () => {
   const app = await launch();
   const user = setupUser();
@@ -321,7 +338,7 @@ test('finish: confirmation, then the summary, then Done', async () => {
   await user.press(screen.getByRole('checkbox', { name: 'Set 1 done' }));
   await user.press(screen.getAllByRole('button', { name: 'Add Set' })[0]); // an empty set
 
-  await user.press(screen.getByRole('button', { name: 'Finish' }));
+  await user.press(screen.getByRole('button', { name: 'Finish Workout' }));
 
   expect(lastAlert().title).toBe('Finish workout?');
   expect(lastAlert().message).toBe("1 empty set won't count.");
@@ -340,6 +357,8 @@ test('finish: confirmation, then the summary, then Done', async () => {
   expect(screen.getByText('1 / 1')).toBeOnTheScreen();
   expect(screen.getByText('7 / 10 · 70%')).toBeOnTheScreen();
   expect(screen.getByText('1 / 1 done')).toBeOnTheScreen();
+  // finished within a minute of the start
+  expect(screen.getByText(/ · < 1 min$/)).toBeOnTheScreen();
   expectAccessibleControls();
 
   await user.press(screen.getByRole('button', { name: 'Done' }));
@@ -360,7 +379,7 @@ test('a Finish the DB refuses stays on the workout, with no haptic', async () =>
   await fireEvent(makes, 'focus');
   await fireEvent.changeText(makes, '7');
   await fireEvent(makes, 'blur');
-  await user.press(screen.getByRole('button', { name: 'Finish' }));
+  await user.press(screen.getByRole('button', { name: 'Finish Workout' }));
 
   // the exercise goes away behind the question: finishing an empty workout is refused
   db.delete(sessionExercises).run();
@@ -377,7 +396,7 @@ test('finish with nothing logged offers only Discard and Keep going', async () =
   await startWorkout(user);
   await addExerciseByName(user, 'Free Throws', 'attempts');
 
-  await user.press(screen.getByRole('button', { name: 'Finish' }));
+  await user.press(screen.getByRole('button', { name: 'Finish Workout' }));
 
   expect(lastAlert().title).toBe('Nothing logged yet');
   expect(lastAlert().buttons.map((b) => b.text)).toEqual(['Keep going', 'Discard workout']);

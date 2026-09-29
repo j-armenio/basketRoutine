@@ -4,10 +4,14 @@ import { fgTone } from '@/components/fgTone';
 import { fgBand, setFgPct } from '@/domain/fg';
 import { formatFgPct } from '@/domain/format';
 import { summarizeExercise } from '@/domain/summary';
-import { spacing } from '@/theme/spacing';
+import { Icon } from '@/components/Icon';
+import { colors } from '@/theme/colors';
+import { size, spacing } from '@/theme/spacing';
+import { tabularNums } from '@/theme/typography';
 import { StyleSheet, View } from 'react-native';
 import type { SessionExerciseDetail, SessionSetDetail } from '../workout/hooks';
-import { setTable } from '../workout/setTable';
+import { SetNumber } from '../workout/SetNumber';
+import { columnRoles, setTable } from '../workout/setTable';
 import { SetTableHeader, modeSubtitle } from '../workout/SetTableHeader';
 
 const EMPTY = '—';
@@ -22,14 +26,14 @@ export function SessionExerciseView({ exercise }: { exercise: SessionExerciseDet
 
   return (
     <Card>
-      <View>
-        <AppText variant="heading">{exercise.name}</AppText>
-        <AppText variant="caption" tone="muted">
+      <View style={styles.titles}>
+        <AppText variant="cardTitle">{exercise.name}</AppText>
+        <AppText variant="caption" tone="secondary">
           {modeSubtitle(targetMode)}
         </AppText>
       </View>
       <View style={styles.table}>
-        <SetTableHeader targetMode={targetMode} />
+        <SetTableHeader targetMode={targetMode} readOnly />
         {exercise.sets.map((set, position) =>
           targetMode ? (
             <ShootingRow key={set.id} set={set} number={position + 1} targetMode={targetMode} />
@@ -39,27 +43,15 @@ export function SessionExerciseView({ exercise }: { exercise: SessionExerciseDet
         )}
       </View>
       {summary.trackingType === 'makes_attempts' && summary.attempts > 0 && (
-        <AppText tone="muted">
+        <AppText variant="bodySmall" tone="secondary">
           Total: {summary.makes} makes / {summary.attempts} attempts ·{' '}
-          <AppText tone={fgTone(fgBand(summary.fgPct), 'muted')}>
-            {formatFgPct(summary.fgPct)}
-          </AppText>
+          <AppText tone={fgTone(fgBand(summary.fgPct))}>{formatFgPct(summary.fgPct)}</AppText>
         </AppText>
       )}
       {exercise.note !== '' && (
         <AppText accessibilityLabel={`${exercise.name} note`}>{exercise.note}</AppText>
       )}
     </Card>
-  );
-}
-
-function NumberCell({ number }: { number: number }) {
-  return (
-    <View style={setTable.numberColumn}>
-      <AppText variant="label" tone="muted">
-        {number}
-      </AppText>
-    </View>
   );
 }
 
@@ -72,30 +64,33 @@ function ShootingRow({
   number: number;
   targetMode: 'attempts' | 'makes';
 }) {
-  const targetName = targetMode;
-  const loggedName = targetMode === 'attempts' ? 'makes' : 'attempts';
+  const roles = columnRoles(targetMode);
   const fg =
     set.targetValue === null
       ? null
       : setFgPct({ targetMode, targetValue: set.targetValue, loggedValue: set.loggedValue });
+  const value = (role: 'logged' | 'target') =>
+    (role === 'logged' ? set.loggedValue : set.targetValue) ?? EMPTY;
 
   return (
     <View style={setTable.row}>
-      <NumberCell number={number} />
-      <View style={setTable.targetColumn}>
-        <AppText style={styles.centered} accessibilityLabel={`Set ${number} ${targetName}`}>
-          {set.targetValue ?? EMPTY}
+      <SetNumber number={number} />
+      <View style={setTable.valueColumn}>
+        <AppText weight="bold" style={tabularNums} accessibilityLabel={`Set ${number} makes`}>
+          {value(roles.makes)}
         </AppText>
       </View>
-      <View style={setTable.loggedColumn}>
-        <AppText style={styles.centered} accessibilityLabel={`Set ${number} ${loggedName}`}>
-          {set.loggedValue ?? EMPTY}
+      <View style={setTable.valueColumn}>
+        <AppText weight="bold" style={tabularNums} accessibilityLabel={`Set ${number} attempts`}>
+          {value(roles.attempts)}
         </AppText>
       </View>
       <View style={setTable.fgColumn}>
         <AppText
-          variant="label"
-          tone={fgTone(fgBand(fg), 'muted')}
+          variant="bodySmall"
+          weight="bold"
+          tone={fgTone(fgBand(fg))}
+          style={tabularNums}
           accessibilityLabel={`Set ${number} FG%`}
         >
           {formatFgPct(fg)}
@@ -108,29 +103,28 @@ function ShootingRow({
 function CheckRow({ set, number }: { set: SessionSetDetail; number: number }) {
   return (
     <View style={setTable.row}>
-      <NumberCell number={number} />
-      <View style={styles.checkColumn}>
-        <AppText
-          style={styles.centered}
-          accessibilityLabel={`Set ${number} ${set.completed ? 'done' : 'not done'}`}
-        >
-          {set.completed ? '✓' : EMPTY}
-        </AppText>
+      <SetNumber number={number} />
+      <View
+        style={setTable.doneColumn}
+        accessible
+        accessibilityRole="text"
+        accessibilityLabel={`Set ${number} ${set.completed ? 'done' : 'not done'}`}
+      >
+        {set.completed ? (
+          <Icon name="check" size={size.iconLarge} color={colors.success} />
+        ) : (
+          <AppText tone="secondary">{EMPTY}</AppText>
+        )}
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  titles: {
+    gap: spacing.xxs,
+  },
   table: {
     gap: spacing.sm,
-  },
-  centered: {
-    textAlign: 'center',
-  },
-  // Under the header's DONE label.
-  checkColumn: {
-    width: 56,
-    marginLeft: spacing.sm,
   },
 });

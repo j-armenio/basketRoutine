@@ -7,6 +7,7 @@ import { IconButton } from '@/components/IconButton';
 import { fgBand } from '@/domain/fg';
 import { formatFgPct } from '@/domain/format';
 import { summarizeExercise } from '@/domain/summary';
+import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import { useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
@@ -36,15 +37,16 @@ export function ExerciseCard({ exercise, index, count, onMove }: ExerciseCardPro
     ]);
 
   return (
-    <Card>
+    <Card variant="compact" style={styles.card}>
       <View style={styles.header}>
         <View style={styles.titles}>
-          <AppText variant="heading">{exercise.name}</AppText>
-          <AppText variant="caption" tone="muted">
+          <AppText variant="cardTitle">{exercise.name}</AppText>
+          <AppText variant="caption" tone="secondary">
             {modeSubtitle(targetMode)}
           </AppText>
         </View>
         <IconButton
+          color={colors.iconMuted}
           icon="more_vert"
           accessibilityLabel={`${exercise.name} menu`}
           onPress={() => setMenuOpen(true)}
@@ -72,9 +74,9 @@ export function ExerciseCard({ exercise, index, count, onMove }: ExerciseCardPro
         )}
       </View>
       {summary.trackingType === 'makes_attempts' && summary.attempts > 0 && (
-        <AppText tone="muted">
+        <AppText variant="bodySmall" tone="secondary" style={styles.total}>
           Total: {summary.makes} makes / {summary.attempts} attempts ·{' '}
-          <AppText tone={fgTone(fgBand(summary.fgPct), 'muted')}>
+          <AppText variant="bodySmall" weight="bold" tone={fgTone(fgBand(summary.fgPct))}>
             {formatFgPct(summary.fgPct)}
           </AppText>
         </AppText>
@@ -112,15 +114,25 @@ export function ExerciseCard({ exercise, index, count, onMove }: ExerciseCardPro
 }
 
 const styles = StyleSheet.create({
+  // The ⋮ button's own padding lines its icon up with the table's right edge.
+  card: {
+    paddingRight: spacing.md,
+  },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: spacing.sm,
   },
   titles: {
     flex: 1,
+    gap: spacing.xxs,
+    paddingTop: spacing.xs,
   },
   table: {
     gap: spacing.sm,
+    paddingRight: spacing.xs,
+  },
+  total: {
+    paddingTop: spacing.xs,
   },
 });

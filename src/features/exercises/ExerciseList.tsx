@@ -4,7 +4,7 @@ import type { Exercise } from '@/db/types';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import type { AndroidSymbol } from 'expo-symbols';
-import { SectionList, StyleSheet } from 'react-native';
+import { SectionList, StyleSheet, View } from 'react-native';
 import type { CategorySection } from './catalogList';
 import { ExerciseRow } from './ExerciseRow';
 
@@ -14,6 +14,8 @@ type ExerciseListProps = {
   rightIcon?: AndroidSymbol;
   /** What the empty list says (default: "No exercises found"). */
   empty?: { title: string; message?: string };
+  /** Room at the bottom, so the last row can scroll out from under a FAB. */
+  bottomClearance?: number;
 };
 
 /**
@@ -25,18 +27,21 @@ export function ExerciseList({
   onPressExercise,
   rightIcon,
   empty = { title: 'No exercises found' },
+  bottomClearance = 0,
 }: ExerciseListProps) {
   return (
     <SectionList
       style={styles.list}
+      contentContainerStyle={{ paddingBottom: spacing.lg + bottomClearance }}
       sections={sections}
       keyExtractor={(exercise) => String(exercise.id)}
       keyboardShouldPersistTaps="handled"
       stickySectionHeadersEnabled={false}
+      ItemSeparatorComponent={Separator}
       renderSectionHeader={({ section }) => (
         <AppText
-          variant="label"
-          tone="muted"
+          variant="sectionHeader"
+          tone="secondary"
           accessibilityRole="header"
           style={styles.sectionHeader}
         >
@@ -51,15 +56,20 @@ export function ExerciseList({
   );
 }
 
+const Separator = () => <View style={styles.separator} />;
+
 const styles = StyleSheet.create({
   list: {
     flex: 1,
-    marginHorizontal: -spacing.lg,
+    marginHorizontal: -spacing.screenPadding,
   },
   sectionHeader: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xs,
+    paddingHorizontal: spacing.screenPadding + spacing.xs,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.xsPlus,
     backgroundColor: colors.background,
+  },
+  separator: {
+    height: spacing.xsPlus,
   },
 });

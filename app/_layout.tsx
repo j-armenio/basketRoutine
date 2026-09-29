@@ -1,7 +1,10 @@
 import { useBlurOnKeyboardHide } from '@/components/useBlurOnKeyboardHide';
 import { useDatabaseSetup } from '@/db/useDatabaseSetup';
 import { colors } from '@/theme/colors';
+import { fontFiles } from '@/theme/fonts';
 import { navigationTheme } from '@/theme/navigationTheme';
+import { spacing } from '@/theme/spacing';
+import { typography } from '@/theme/typography';
 import { Stack, ThemeProvider } from 'expo-router';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
@@ -15,9 +18,9 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const { ready, error } = useDatabaseSetup();
-  // Preloads the icon font behind the splash, so tab icons don't wait for it. If it
-  // fails we carry on: icons fall back to their empty box.
-  const [fontsLoaded, fontError] = useFonts({ [regular.name]: regular.font });
+  // Preloads the text and icon fonts behind the splash, so nothing redraws once they arrive. If
+  // one fails we carry on: text falls back to the system font, icons to their empty box.
+  const [fontsLoaded, fontError] = useFonts({ ...fontFiles, [regular.name]: regular.font });
   const fontsSettled = fontsLoaded || !!fontError;
   useBlurOnKeyboardHide();
 
@@ -50,6 +53,7 @@ export default function RootLayout() {
           <Stack.Screen name="edit-workout" options={{ animation: 'slide_from_bottom' }} />
           <Stack.Screen name="edit-exercise" options={{ animation: 'slide_from_bottom' }} />
           <Stack.Screen name="add-exercise" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="add-to-routine" options={{ presentation: 'modal' }} />
         </Stack>
         <StatusBar style="light" />
       </ThemeProvider>
@@ -65,12 +69,12 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 24,
+    padding: spacing.xxl,
     backgroundColor: colors.background,
   },
   errorText: {
-    color: colors.text,
-    fontSize: 16,
+    color: colors.textPrimary,
+    fontSize: typography.body.fontSize,
     textAlign: 'center',
   },
 });

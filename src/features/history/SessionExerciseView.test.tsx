@@ -70,7 +70,7 @@ test('a fixed-makes drill logs attempts', async () => {
   expect(screen.getByText('Total: 5 makes / 8 attempts · 62.5%')).toBeOnTheScreen();
 });
 
-test('each FG% is colored by its band: good, poor, neutral, and muted when empty', async () => {
+test('each FG% is colored by its band: good, poor, neutral, and secondary when empty', async () => {
   await render(
     <SessionExerciseView
       exercise={exercise({
@@ -80,23 +80,23 @@ test('each FG% is colored by its band: good, poor, neutral, and muted when empty
   );
 
   expect(screen.getByLabelText('Set 1 FG%')).toHaveStyle({ color: colors.success });
-  expect(screen.getByLabelText('Set 2 FG%')).toHaveStyle({ color: colors.danger });
-  expect(screen.getByLabelText('Set 3 FG%')).toHaveStyle({ color: colors.textMuted });
-  expect(screen.getByLabelText('Set 4 FG%')).toHaveStyle({ color: colors.textMuted });
+  expect(screen.getByLabelText('Set 2 FG%')).toHaveStyle({ color: colors.error });
+  expect(screen.getByLabelText('Set 3 FG%')).toHaveStyle({ color: colors.neutralStat });
+  expect(screen.getByLabelText('Set 4 FG%')).toHaveStyle({ color: colors.textSecondary });
   // the total, 14 / 30 = 46.7%: neutral, only the percent is its own text
-  expect(screen.getByText('46.7%')).toHaveStyle({ color: colors.textMuted });
+  expect(screen.getByText('46.7%')).toHaveStyle({ color: colors.neutralStat });
 });
 
 test("the total's percent takes the band's color, not the line", async () => {
   await render(<SessionExerciseView exercise={exercise({ sets: [set(1, 10, 1)] })} />);
 
   const line = screen.getByText('Total: 1 makes / 10 attempts · 10%');
-  expect(line).toHaveStyle({ color: colors.textMuted });
+  expect(line).toHaveStyle({ color: colors.textSecondary });
   // the set's FG% and the total's are both 10%: the last one is the total
-  expect(screen.getAllByText('10%').at(-1)).toHaveStyle({ color: colors.danger });
+  expect(screen.getAllByText('10%').at(-1)).toHaveStyle({ color: colors.error });
 });
 
-test('a check drill shows ✓ for a done set and — for the rest, with no total', async () => {
+test('a check drill shows a check for a done set and — for the rest, with no total', async () => {
   await render(
     <SessionExerciseView
       exercise={exercise({
@@ -109,7 +109,7 @@ test('a check drill shows ✓ for a done set and — for the rest, with no total
   );
 
   expect(screen.getByText('Check when done')).toBeOnTheScreen();
-  expect(screen.getByLabelText('Set 1 done')).toHaveTextContent('✓');
+  expect(screen.getByLabelText('Set 1 done')).toBeOnTheScreen();
   expect(screen.getByLabelText('Set 2 not done')).toHaveTextContent('—');
   expect(screen.queryByText(/Total:/)).toBeNull();
 });

@@ -1,3 +1,4 @@
+import { BottomActionBar } from '@/components/BottomActionBar';
 import { Button } from '@/components/Button';
 import { EmptyState } from '@/components/EmptyState';
 import { IconButton } from '@/components/IconButton';
@@ -12,7 +13,7 @@ import {
   useDraft,
   useDraftDirty,
 } from '@/features/routines/draftStore';
-import { loadDraft } from '@/features/routines/loadDraft';
+import { loadDraft, withRequestedExercise } from '@/features/routines/loadDraft';
 import { TemplateExerciseCard } from '@/features/routines/TemplateExerciseCard';
 import { rename, toSaveInput } from '@/features/routines/templateDraft';
 import { leaveScreen } from '@/features/workout/navigation';
@@ -25,19 +26,33 @@ const parseId = (value: string | undefined) => (value === undefined ? undefined 
 
 /**
  * The template editor: `?routineId=` creates a workout in that routine, `?workoutId=` edits one.
- * Edits live in the in-memory draft (see `draftStore`) until Save. Cancel drops them.
+ * Edits live in the in-memory draft (see `draftStore`) until Save. Cancel drops them. Add to
+ * Routine opens it with `?addExerciseId=` (and `?targetMode=`): the exercise is already appended,
+ * unsaved.
  */
 export default function EditWorkoutScreen() {
   const router = useRouter();
   const navigation = useNavigation();
-  const params = useLocalSearchParams<{ routineId?: string; workoutId?: string }>();
+  const params = useLocalSearchParams<{
+    routineId?: string;
+    workoutId?: string;
+    /** Add to Routine: the exercise to append, and its mode for a shooting drill. */
+    addExerciseId?: string;
+    targetMode?: string;
+  }>();
   // Opens the draft while rendering for the first time, so the editor never renders without one.
   const [loaded] = useState(() => {
     const initial = loadDraft({
       workoutId: parseId(params.workoutId),
       routineId: parseId(params.routineId),
     });
-    if (initial) openDraft(initial);
+    if (initial) {
+      const requested = {
+        exerciseId: parseId(params.addExerciseId),
+        targetMode: params.targetMode,
+      };
+      openDraft(initial, withRequestedExercise(initial, requested));
+    }
     return initial !== null;
   });
   const draft = useDraft();
@@ -68,7 +83,7 @@ export default function EditWorkoutScreen() {
 
   if (!loaded) {
     return (
-      <Screen title="Edit Workout" bottomInset>
+      <Screen title="Edit Workout" titleVariant="title" bottomInset>
         <EmptyState
           icon="sports_basketball"
           title="Workout not found"
@@ -102,10 +117,11 @@ export default function EditWorkoutScreen() {
   return (
     <Screen
       title={draft.workoutId === undefined ? 'New Workout' : 'Edit Workout'}
+      titleVariant="title"
       left={
         <IconButton icon="close" accessibilityLabel="Cancel" onPress={() => leaveScreen(router)} />
       }
-      right={<Button label="Save" onPress={save} />}
+      footer={<BottomActionBar label="Save" onPress={save} />}
       bottomInset
       keyboardAvoiding
     >

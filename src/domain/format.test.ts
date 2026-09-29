@@ -1,8 +1,11 @@
 import {
+  formatDayDate,
+  formatElapsed,
   formatDuration,
   formatExerciseList,
   formatFgPct,
   formatMonth,
+  formatShortDate,
   formatWorkoutDate,
   parseCount,
 } from './format';
@@ -48,13 +51,17 @@ describe('formatDuration', () => {
   const min = 60_000;
 
   test.each([
-    [0, '0 min'],
+    [0, '< 1 min'],
+    [29_000, '< 1 min'],
+    [59_999, '< 1 min'],
+    [min, '1 min'],
+    [min + 29_000, '1 min'],
     [42 * min, '42 min'],
     [59 * min + 40_000, '1 h 00 min'],
     [60 * min, '1 h 00 min'],
     [65 * min, '1 h 05 min'],
     [135 * min, '2 h 15 min'],
-    [-5 * min, '0 min'],
+    [-5 * min, '< 1 min'],
   ])('%s ms -> %s', (ms, expected) => {
     expect(formatDuration(ms)).toBe(expected);
   });
@@ -85,4 +92,26 @@ describe('formatExerciseList', () => {
   test('says so when there is nothing', () => {
     expect(formatExerciseList([])).toBe('No exercises');
   });
+});
+
+describe('formatElapsed', () => {
+  test.each([
+    [0, '00:00'],
+    [999, '00:00'],
+    [1000, '00:01'],
+    [65_000, '01:05'],
+    [754_000, '12:34'],
+    [3_599_999, '59:59'],
+    [3_600_000, '1:00:00'],
+    [3_723_000, '1:02:03'],
+    [-5000, '00:00'],
+  ])('%d ms -> %s', (ms, text) => {
+    expect(formatElapsed(ms)).toBe(text);
+  });
+});
+
+test('formatShortDate and formatDayDate use the local date, in English', () => {
+  const date = new Date(2026, 8, 28, 23, 30);
+  expect(formatShortDate(date)).toBe('Sep 28');
+  expect(formatDayDate(date)).toBe('Mon, Sep 28');
 });

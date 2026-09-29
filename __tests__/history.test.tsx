@@ -225,13 +225,51 @@ describe('the History list', () => {
     // shooting only: 5 makes / 14 attempts
     const shooting = within(rows[1]);
     expect(shooting.getByText('Thu, Aug 20, 2026 · 1 h 05 min')).toBeOnTheScreen();
-    expect(shooting.getByText('35.7%')).toHaveStyle({ color: colors.danger });
+    expect(shooting.getByText('35.7%')).toHaveStyle({ color: colors.error });
     expect(shooting.queryByText(/done/)).toBeNull();
     // checks only
     const checks = within(rows[2]);
     expect(checks.getByText('Wed, Aug 12, 2026 · 20 min')).toBeOnTheScreen();
     expect(checks.getByText('1 / 1 done')).toBeOnTheScreen();
     expect(checks.queryByText(/%/)).toBeNull();
+  });
+
+  test('the FG% evolution card charts the sessions with a shooting set, oldest first', async () => {
+    seedHistory();
+    await launch();
+    const user = setupUser();
+
+    await user.press(historyTab());
+
+    expect(screen.getByRole('header', { name: 'FG% evolution' })).toBeOnTheScreen();
+    // Footwork has checks only: two points, not three
+    expect(screen.getByText('Last 2 workouts')).toBeOnTheScreen();
+    expect(screen.getByText('latest workout')).toBeOnTheScreen();
+    expect(
+      screen.getByRole('image', {
+        name: 'FG% over the last 2 workouts: Aug 20 Layups 35.7%, Sep 15 Morning Workout 70%',
+      }),
+    ).toBeOnTheScreen();
+    // the latest value, above the chart and colored by its band (the row has its own 70%)
+    expect(screen.getAllByText('70%')[0]).toHaveStyle({ color: colors.success });
+    expectAccessibleControls();
+  });
+
+  test('no FG% evolution card when no session has a shooting set', async () => {
+    const footwork = startEmptySession(db, 'Footwork');
+    logAndFinish(
+      footwork.id,
+      [{ key: 'figure_8', sets: [{ done: true }] }],
+      new Date(2026, 7, 12, 9, 0),
+      20,
+    );
+    await launch();
+    const user = setupUser();
+
+    await user.press(historyTab());
+
+    expect(screen.getByText('1 workout logged')).toBeOnTheScreen();
+    expect(screen.queryByRole('header', { name: 'FG% evolution' })).toBeNull();
   });
 
   test('the count is singular for one workout', async () => {
@@ -277,7 +315,7 @@ describe('the session detail', () => {
     expect(screen.getByLabelText('Set 2 FG%')).toHaveTextContent('—');
     expect(screen.getByText('Total: 7 makes / 10 attempts · 70%')).toBeOnTheScreen();
     expect(screen.getByText('Check when done')).toBeOnTheScreen();
-    expect(screen.getByLabelText('Set 1 done')).toHaveTextContent('✓');
+    expect(screen.getByLabelText('Set 1 done')).toBeOnTheScreen();
     // the note, and nothing to edit
     expect(screen.getByLabelText('Free Throws note')).toHaveTextContent('elbow in');
     expect(screen.queryByRole('checkbox')).toBeNull();
@@ -297,7 +335,7 @@ describe('the session detail', () => {
     expect(screen.getByLabelText('Set 1 makes')).toHaveTextContent('5');
     expect(screen.getByLabelText('Set 1 attempts')).toHaveTextContent('14');
     expect(screen.getByText('5 makes / 14 attempts')).toBeOnTheScreen();
-    expect(screen.getAllByText('35.7%')[0]).toHaveStyle({ color: colors.danger });
+    expect(screen.getAllByText('35.7%')[0]).toHaveStyle({ color: colors.error });
     expect(screen.queryByText('Checks')).toBeNull();
   });
 
@@ -370,7 +408,7 @@ async function logFreeThrowsAndFinish(user: ReturnType<typeof setupUser>) {
   const makes = screen.getByLabelText('Set 1 makes');
   await fireEvent(makes, 'focus');
   await fireEvent.changeText(makes, '7');
-  await user.press(screen.getByRole('button', { name: 'Finish' }));
+  await user.press(screen.getByRole('button', { name: 'Finish Workout' }));
   await pressAlert('Finish');
   await user.press(screen.getByRole('button', { name: 'Done' }));
 }

@@ -10,6 +10,7 @@ import { summarizeExercise, summarizeSession } from '@/domain/summary';
 import { SessionTotals } from '@/features/history/SessionTotals';
 import { useSessionDetail } from '@/features/workout/hooks';
 import { spacing } from '@/theme/spacing';
+import { tabularNums } from '@/theme/typography';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
@@ -42,23 +43,27 @@ export default function WorkoutSummaryScreen() {
       bottomInset
     >
       <SessionTotals summary={summary} />
-      <Card>
-        <AppText variant="heading">Exercises</AppText>
-        {detail.exercises.length === 0 && <AppText tone="muted">No exercises.</AppText>}
+      <Card style={styles.exercises}>
+        <AppText variant="sectionTitle">Exercises</AppText>
+        {detail.exercises.length === 0 && (
+          <AppText variant="bodySmall" tone="secondary">
+            No exercises.
+          </AppText>
+        )}
         {detail.exercises.map((exercise) => {
           const result = summarizeExercise(exercise);
           return (
             <View key={exercise.id} style={styles.line}>
-              <AppText style={styles.name} numberOfLines={1}>
+              <AppText variant="bodySmall" style={styles.name} numberOfLines={1}>
                 {exercise.name}
               </AppText>
-              <AppText tone="muted">
+              <AppText variant="bodySmall" tone="secondary" style={tabularNums}>
                 {result.trackingType === 'check' ? (
                   `${result.completed} / ${result.total} done`
                 ) : result.attempts > 0 ? (
                   <>
                     {`${result.makes} / ${result.attempts} · `}
-                    <AppText tone={fgTone(fgBand(result.fgPct), 'muted')}>
+                    <AppText variant="bodySmall" weight="bold" tone={fgTone(fgBand(result.fgPct))}>
                       {formatFgPct(result.fgPct)}
                     </AppText>
                   </>
@@ -70,19 +75,27 @@ export default function WorkoutSummaryScreen() {
           );
         })}
       </Card>
-      <Button label="Done" fullWidth onPress={done} />
+      <View style={styles.done}>
+        <Button label="Done" fullWidth onPress={done} />
+      </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  exercises: {
+    gap: spacing.mdPlus,
+  },
   line: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'baseline',
     justifyContent: 'space-between',
     gap: spacing.md,
   },
   name: {
     flex: 1,
+  },
+  done: {
+    marginTop: spacing.sm,
   },
 });

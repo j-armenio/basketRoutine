@@ -7,6 +7,7 @@ import type { TargetMode } from '@/domain/types';
 import { spacing } from '@/theme/spacing';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { SetNumber } from '../workout/SetNumber';
 import { setTable } from '../workout/setTable';
 import { useNumberCell } from '../workout/useNumberCell';
 import { updateDraft } from './draftStore';
@@ -38,11 +39,7 @@ export function TemplateSetRow(props: TemplateSetRowProps) {
     >
       {targetMode === null ? (
         <View style={setTable.row}>
-          <View style={setTable.numberColumn}>
-            <AppText variant="label" tone="muted">
-              {number}
-            </AppText>
-          </View>
+          <SetNumber number={number} />
         </View>
       ) : (
         <TargetRow {...props} targetMode={targetMode} />
@@ -73,11 +70,7 @@ function TargetRow({
   return (
     <View style={styles.container}>
       <View style={setTable.row}>
-        <View style={setTable.numberColumn}>
-          <AppText variant="label" tone="muted">
-            {number}
-          </AppText>
-        </View>
+        <SetNumber number={number} />
         <View style={setTable.loggedColumn}>
           <NumberInput
             accessibilityLabel={`Set ${number} ${targetMode}`}
@@ -90,7 +83,7 @@ function TargetRow({
         </View>
       </View>
       {rejection && (
-        <AppText variant="caption" tone="danger" style={styles.error} accessibilityRole="alert">
+        <AppText variant="caption" tone="error" style={styles.error} accessibilityRole="alert">
           {reasonMessage(rejection)}
         </AppText>
       )}

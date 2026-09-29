@@ -8,11 +8,13 @@ import { formatFgPct } from '@/domain/format';
 import { reasonMessage } from '@/domain/messages';
 import type { TargetMode } from '@/domain/types';
 import { spacing } from '@/theme/spacing';
+import { tabularNums } from '@/theme/typography';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { deleteSet, updateSet } from './actions';
 import type { SessionSetDetail } from './hooks';
-import { setTable } from './setTable';
+import { SetNumber } from './SetNumber';
+import { columnRoles, setTable } from './setTable';
 import type { SetField } from './setDraft';
 import { useNumberCell } from './useNumberCell';
 
@@ -50,6 +52,36 @@ export function ShootingSetRow({ set, number, targetMode, deletable }: ShootingS
       ? null
       : setFgPct({ targetMode, targetValue: set.targetValue, loggedValue: set.loggedValue });
 
+  const inputs = {
+    targetValue: (
+      <NumberInput
+        size="compact"
+        accessibilityLabel={`Set ${number} ${targetName}`}
+        value={target.text}
+        onFocus={target.onFocus}
+        onChangeText={target.onChangeText}
+        onBlur={target.onBlur}
+        invalid={rejection?.field === 'targetValue'}
+      />
+    ),
+    loggedValue: (
+      <NumberInput
+        accessibilityLabel={`Set ${number} ${loggedName}`}
+        value={logged.text}
+        onFocus={logged.onFocus}
+        onChangeText={logged.onChangeText}
+        onBlur={logged.onBlur}
+        invalid={rejection?.field === 'loggedValue'}
+      />
+    ),
+  };
+  const roles = columnRoles(targetMode);
+  const valueCell = (role: 'logged' | 'target') => (
+    <View style={role === 'logged' ? setTable.loggedColumn : setTable.targetColumn}>
+      {role === 'logged' ? inputs.loggedValue : inputs.targetValue}
+    </View>
+  );
+
   return (
     <SwipeToDelete
       testID={`set-${number}`}
@@ -59,36 +91,15 @@ export function ShootingSetRow({ set, number, targetMode, deletable }: ShootingS
     >
       <View style={styles.container}>
         <View style={setTable.row}>
-          <View style={setTable.numberColumn}>
-            <AppText variant="label" tone="muted">
-              {number}
-            </AppText>
-          </View>
-          <View style={setTable.targetColumn}>
-            <NumberInput
-              size="compact"
-              accessibilityLabel={`Set ${number} ${targetName}`}
-              value={target.text}
-              onFocus={target.onFocus}
-              onChangeText={target.onChangeText}
-              onBlur={target.onBlur}
-              invalid={rejection?.field === 'targetValue'}
-            />
-          </View>
-          <View style={setTable.loggedColumn}>
-            <NumberInput
-              accessibilityLabel={`Set ${number} ${loggedName}`}
-              value={logged.text}
-              onFocus={logged.onFocus}
-              onChangeText={logged.onChangeText}
-              onBlur={logged.onBlur}
-              invalid={rejection?.field === 'loggedValue'}
-            />
-          </View>
+          <SetNumber number={number} />
+          {valueCell(roles.makes)}
+          {valueCell(roles.attempts)}
           <View style={setTable.fgColumn}>
             <AppText
-              variant="label"
-              tone={fgTone(fgBand(fg), 'muted')}
+              variant="bodySmall"
+              weight="bold"
+              tone={fgTone(fgBand(fg))}
+              style={tabularNums}
               accessibilityLabel={`Set ${number} FG%`}
             >
               {formatFgPct(fg)}
@@ -96,7 +107,7 @@ export function ShootingSetRow({ set, number, targetMode, deletable }: ShootingS
           </View>
         </View>
         {rejection && (
-          <AppText variant="caption" tone="danger" style={styles.error} accessibilityRole="alert">
+          <AppText variant="caption" tone="error" style={styles.error} accessibilityRole="alert">
             {reasonMessage(rejection.reason)}
           </AppText>
         )}

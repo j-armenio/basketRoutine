@@ -1,5 +1,6 @@
 import { Icon } from '@/components/Icon';
 import { colors } from '@/theme/colors';
+import { radius, size } from '@/theme/spacing';
 import { Image } from 'expo-image';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useState } from 'react';
@@ -33,7 +34,7 @@ export function MediaView({
   style,
   fit = 'cover',
   controls = false,
-  iconSize = 24,
+  iconSize = size.iconLarge,
 }: MediaViewProps) {
   const [failed, setFailed] = useState<MediaSource['source'] | null>(null);
   if (!media || failed === media.source)
@@ -63,7 +64,7 @@ export function MediaView({
 
 export function MediaPlaceholder({
   style,
-  iconSize = 24,
+  iconSize = size.iconLarge,
 }: {
   style: StyleProp<ImageStyle>;
   iconSize?: number;
@@ -74,7 +75,7 @@ export function MediaPlaceholder({
       importantForAccessibility="no-hide-descendants"
       style={[styles.box, styles.center, style]}
     >
-      <Icon name="sports_basketball" size={iconSize} color={colors.textMuted} />
+      <Icon name="sports_basketball" size={iconSize} color={colors.iconPlaceholder} />
     </View>
   );
 }
@@ -103,7 +104,7 @@ function VideoStill({
     >
       {thumbnail && <Image source={thumbnail} contentFit={fit} style={StyleSheet.absoluteFill} />}
       <View style={styles.badge}>
-        <Icon name="play_arrow" size={Math.round(iconSize * 0.75)} color={colors.text} />
+        <Icon name="play_arrow" size={Math.round(iconSize * 0.75)} color={colors.textPrimary} />
       </View>
     </View>
   );
@@ -150,7 +151,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   badge: {
-    borderRadius: 999,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: radius.pill,
+    backgroundColor: colors.background,
   },
 });

@@ -1,7 +1,7 @@
 import { AppText } from '@/components/AppText';
 import { TextField } from '@/components/TextField';
 import { colors } from '@/theme/colors';
-import { radius, spacing, touch } from '@/theme/spacing';
+import { opacity, radius, size, spacing } from '@/theme/spacing';
 import { useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import { updateNote } from './actions';
@@ -25,6 +25,7 @@ export function ExerciseNote({ exerciseId, name, note }: ExerciseNoteProps) {
   if (editing) {
     return (
       <TextField
+        variant="raised"
         accessibilityLabel={label}
         placeholder="Add a note"
         multiline
@@ -48,22 +49,29 @@ export function ExerciseNote({ exerciseId, name, note }: ExerciseNoteProps) {
       onPress={() => setEditing(true)}
       style={({ pressed }) => [styles.note, pressed && styles.pressed]}
     >
-      <AppText tone={text === '' ? 'muted' : 'default'} numberOfLines={2} ellipsizeMode="tail">
+      <AppText
+        variant="bodySmall"
+        tone={text === '' ? 'secondary' : 'default'}
+        numberOfLines={2}
+        ellipsizeMode="tail"
+      >
         {text === '' ? 'Add a note' : text}
       </AppText>
     </Pressable>
   );
 }
 
+// At rest it looks like the field it opens into.
 const styles = StyleSheet.create({
   note: {
-    minHeight: touch.min,
+    minHeight: size.minTouchTarget,
     justifyContent: 'center',
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
-    borderRadius: radius.md,
+    borderRadius: radius.cell,
+    backgroundColor: colors.surfaceRaised,
   },
   pressed: {
-    backgroundColor: colors.surfaceElevated,
+    opacity: opacity.pressed,
   },
 });

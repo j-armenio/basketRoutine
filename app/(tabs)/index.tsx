@@ -77,24 +77,25 @@ export default function WorkoutScreen() {
 
   return (
     <Screen title="Workout">
-      <Card>
-        <AppText variant="heading" accessibilityRole="header">
+      <Card style={styles.quickStart}>
+        <AppText variant="sectionTitle" accessibilityRole="header">
           Quick Start
         </AppText>
         <Button
           label={session ? 'Resume Workout' : 'Start Empty Workout'}
           icon={session ? 'play_arrow' : 'add'}
+          caps
           fullWidth
           onPress={startOrResume}
         />
       </Card>
       <View style={styles.heading}>
-        <AppText variant="heading" accessibilityRole="header" style={styles.headingText}>
+        <AppText variant="headline" accessibilityRole="header" style={styles.headingText}>
           Routines
         </AppText>
         {routines.length > 0 && (
           <Button
-            variant="ghost"
+            variant="tonal"
             icon="add"
             label="New Routine"
             onPress={() => setDialog({ kind: 'new' })}
@@ -145,11 +146,18 @@ export default function WorkoutScreen() {
 }
 
 const styles = StyleSheet.create({
+  quickStart: {
+    paddingHorizontal: spacing.cardPaddingCompact,
+    paddingBottom: spacing.cardPaddingCompact,
+    gap: spacing.mdPlus,
+  },
   heading: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: spacing.sm,
+    marginTop: spacing.lg,
+    paddingLeft: spacing.xs,
   },
   headingText: {
     flex: 1,

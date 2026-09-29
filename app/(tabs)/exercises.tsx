@@ -1,5 +1,5 @@
 import { ChipRow } from '@/components/ChipRow';
-import { IconButton } from '@/components/IconButton';
+import { Fab, FAB_CLEARANCE } from '@/components/Fab';
 import { Screen } from '@/components/Screen';
 import { TextField } from '@/components/TextField';
 import { CATEGORIES, CATEGORY_LABELS, type Category } from '@/domain/types';
@@ -34,15 +34,9 @@ export default function ExercisesScreen() {
       title="Exercises"
       subtitle={`${count} ${count === 1 ? 'exercise' : 'exercises'}`}
       scroll={false}
-      right={
-        <IconButton
-          icon="add"
-          accessibilityLabel="New exercise"
-          onPress={() => router.push('/edit-exercise')}
-        />
-      }
     >
       <TextField
+        icon="search"
         accessibilityLabel="Search exercises"
         placeholder="Search exercises"
         value={search}
@@ -55,10 +49,17 @@ export default function ExercisesScreen() {
         sections={sections}
         empty={
           filter === 'custom' && search.trim() === ''
-            ? { title: 'No custom exercises yet', message: 'Create one with the + button.' }
+            ? { title: 'No custom exercises yet', message: 'Create one with New Exercise.' }
             : undefined
         }
+        bottomClearance={FAB_CLEARANCE}
         onPressExercise={(exercise) => router.push(`/exercise/${exercise.id}`)}
+      />
+      <Fab
+        label="New Exercise"
+        icon="add"
+        accessibilityLabel="New exercise"
+        onPress={() => router.push('/edit-exercise')}
       />
     </Screen>
   );

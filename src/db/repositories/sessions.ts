@@ -382,6 +382,31 @@ export function listFinishedSessionsWithExercises(db: Db) {
 }
 
 /**
+ * The finished sessions that hold the exercise, newest first, each with only that exercise's rows
+ * (and their sets), for the exercise's stats. Matched by `exercise_id`, so a renamed custom
+ * exercise keeps its history.
+ */
+export function listExerciseResults(db: Db, exerciseId: number) {
+  return db.query.sessions
+    .findMany({
+      where: eq(sessions.status, 'finished'),
+      orderBy: [desc(sessions.startedAt), desc(sessions.id)],
+      columns: { id: true, startedAt: true },
+      with: {
+        exercises: {
+          where: eq(sessionExercises.exerciseId, exerciseId),
+          orderBy: [asc(sessionExercises.position), asc(sessionExercises.id)],
+          with: {
+            sets: { orderBy: [asc(sessionSets.position), asc(sessionSets.id)] },
+          },
+        },
+      },
+    })
+    .sync()
+    .filter((session) => session.exercises.length > 0);
+}
+
+/**
  * Hard-deletes a finished session (its exercises and sets cascade). History is read-only, so this
  * is the only way to change it; the template it came from is untouched. An in-progress session
  * is discarded from the active workout instead.

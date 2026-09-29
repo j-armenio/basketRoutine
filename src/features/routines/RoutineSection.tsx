@@ -1,9 +1,11 @@
 import { ActionSheet } from '@/components/ActionSheet';
 import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
 import { IconButton } from '@/components/IconButton';
 import type { RoutineWithWorkouts } from '@/db/repositories/routines';
 import { moveItem } from '@/domain/order';
+import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import { useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
@@ -52,18 +54,28 @@ export function RoutineSection({
     );
 
   return (
-    <View style={styles.section}>
+    <Card style={styles.section}>
       <View style={styles.header}>
-        <AppText variant="heading" accessibilityRole="header" numberOfLines={1} style={styles.name}>
+        <AppText
+          variant="sectionTitle"
+          accessibilityRole="header"
+          numberOfLines={1}
+          style={styles.name}
+        >
           {routine.name}
         </AppText>
         <IconButton
           icon="more_vert"
+          color={colors.iconMuted}
           accessibilityLabel={`${routine.name} menu`}
           onPress={() => setMenuOpen(true)}
         />
       </View>
-      {n === 0 && <AppText tone="muted">No workouts in this routine yet.</AppText>}
+      {n === 0 && (
+        <AppText variant="bodySmall" tone="secondary" style={styles.empty}>
+          No workouts in this routine yet.
+        </AppText>
+      )}
       {routine.workouts.map((workout, position) => (
         <WorkoutCard
           key={workout.id}
@@ -76,7 +88,7 @@ export function RoutineSection({
         />
       ))}
       <Button
-        variant="ghost"
+        variant="dashed"
         icon="add"
         label="New Workout"
         accessibilityLabel={`New workout in ${routine.name}`}
@@ -104,20 +116,27 @@ export function RoutineSection({
         ]}
         onClose={() => setMenuOpen(false)}
       />
-    </View>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
   section: {
-    gap: spacing.md,
+    paddingTop: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.md,
+    gap: spacing.smPlus,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+    paddingLeft: spacing.sm,
   },
   name: {
     flex: 1,
+  },
+  empty: {
+    paddingHorizontal: spacing.sm,
   },
 });

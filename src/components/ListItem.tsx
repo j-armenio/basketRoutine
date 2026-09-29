@@ -1,5 +1,5 @@
 import { colors } from '@/theme/colors';
-import { spacing, touch } from '@/theme/spacing';
+import { opacity, size, spacing } from '@/theme/spacing';
 import type { AndroidSymbol } from 'expo-symbols';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type PressableProps } from 'react-native';
@@ -8,15 +8,16 @@ import { Icon } from './Icon';
 
 type ListItemProps = Omit<PressableProps, 'children' | 'style'> & {
   title: string;
-  subtitle?: string;
+  /** A string, or texts of their own (a colored tag). */
+  subtitle?: ReactNode;
   rightIcon?: AndroidSymbol;
   /** Before the texts (a thumbnail). */
   left?: ReactNode;
 };
 
 /**
- * A 56 dp pressable row: an optional element on the left, a title, an optional subtitle and an
- * optional icon on the right.
+ * A pressable row on the screen's background: an optional element on the left (a 64 dp thumbnail),
+ * a title, an optional subtitle and an optional icon on the right.
  */
 export function ListItem({ title, subtitle, rightIcon, left, ...props }: ListItemProps) {
   return (
@@ -27,33 +28,34 @@ export function ListItem({ title, subtitle, rightIcon, left, ...props }: ListIte
     >
       {left}
       <View style={styles.texts}>
-        <AppText variant="label" numberOfLines={1}>
+        <AppText variant="sectionTitle" numberOfLines={1}>
           {title}
         </AppText>
-        {subtitle && (
-          <AppText variant="caption" tone="muted" numberOfLines={1}>
+        {subtitle !== undefined && (
+          <AppText variant="subtitle" tone="secondary" numberOfLines={1}>
             {subtitle}
           </AppText>
         )}
       </View>
-      {rightIcon && <Icon name={rightIcon} color={colors.textMuted} />}
+      {rightIcon && <Icon name={rightIcon} size={size.icon} color={colors.iconMuted} />}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   row: {
-    minHeight: touch.primary,
+    minHeight: size.buttonPrimaryHeight,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
+    gap: spacing.lg,
+    paddingHorizontal: spacing.screenPadding,
+    paddingVertical: spacing.xs,
   },
   pressed: {
-    backgroundColor: colors.surfaceElevated,
+    opacity: opacity.pressed,
   },
   texts: {
     flex: 1,
+    gap: spacing.xxs,
   },
 });

@@ -1,19 +1,28 @@
 import { AppText } from '@/components/AppText';
 import { EmptyState } from '@/components/EmptyState';
 import { Screen } from '@/components/Screen';
-import { groupByMonth } from '@/features/history/historyList';
+import { FgEvolutionCard } from '@/features/history/FgEvolutionCard';
+import { fgEvolution, groupByMonth } from '@/features/history/historyList';
 import { useHistory } from '@/features/history/hooks';
 import { HistoryRow } from '@/features/history/HistoryRow';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import { useRouter } from 'expo-router';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { SectionList, StyleSheet, View } from 'react-native';
+
+/** How many sessions the FG% evolution chart shows. */
+const EVOLUTION_COUNT = 5;
 
 export default function HistoryScreen() {
   const router = useRouter();
   const items = useHistory();
   const sections = useMemo(() => groupByMonth(items), [items]);
+  // A component rather than an element: the list hands its header props to its scroll view.
+  const header = useCallback(
+    () => <FgEvolutionCard points={fgEvolution(items, EVOLUTION_COUNT)} />,
+    [items],
+  );
   const count = items.length;
 
   return (
@@ -35,11 +44,12 @@ export default function HistoryScreen() {
           sections={sections}
           keyExtractor={(item) => String(item.id)}
           stickySectionHeadersEnabled={false}
+          ListHeaderComponent={header}
           ItemSeparatorComponent={Separator}
           renderSectionHeader={({ section }) => (
             <AppText
-              variant="label"
-              tone="muted"
+              variant="sectionHeader"
+              tone="secondary"
               accessibilityRole="header"
               style={styles.sectionHeader}
             >
@@ -62,14 +72,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingBottom: spacing.lg,
+    paddingBottom: spacing.xxl,
   },
   sectionHeader: {
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.sm,
+    paddingHorizontal: spacing.xs,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.md,
     backgroundColor: colors.background,
   },
   separator: {
-    height: spacing.md,
+    height: spacing.itemGap,
   },
 });

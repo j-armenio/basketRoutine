@@ -1,6 +1,6 @@
 import { AppText } from '@/components/AppText';
 import { colors } from '@/theme/colors';
-import { spacing, touch } from '@/theme/spacing';
+import { border, opacity, size, spacing } from '@/theme/spacing';
 import { useRouter } from 'expo-router';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { discardWorkout } from './actions';
@@ -26,10 +26,10 @@ export function ResumeBanner() {
         onPress={() => router.push('/active-workout')}
         style={({ pressed }) => [styles.resume, pressed && styles.pressed]}
       >
-        <AppText variant="caption" tone="accent">
+        <AppText variant="caption" weight="bold" tone="green">
           Workout in progress
         </AppText>
-        <AppText variant="label" numberOfLines={1}>
+        <AppText variant="sectionTitle" numberOfLines={1}>
           {session.name}
         </AppText>
       </Pressable>
@@ -39,7 +39,7 @@ export function ResumeBanner() {
         onPress={confirmDiscard}
         style={({ pressed }) => [styles.discard, pressed && styles.pressed]}
       >
-        <AppText variant="label" tone="danger">
+        <AppText variant="bodySmall" weight="bold" tone="error">
           Discard
         </AppText>
       </Pressable>
@@ -51,22 +51,23 @@ const styles = StyleSheet.create({
   banner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surfaceElevated,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopWidth: border.hairline,
+    borderTopColor: colors.divider,
+    backgroundColor: colors.surface,
   },
   resume: {
     flex: 1,
-    minHeight: touch.primary,
+    minHeight: size.buttonPrimaryHeight,
     justifyContent: 'center',
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.screenPadding + spacing.xs,
+    paddingVertical: spacing.sm,
   },
   discard: {
-    minHeight: touch.primary,
+    minHeight: size.buttonPrimaryHeight,
     justifyContent: 'center',
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.xl,
   },
   pressed: {
-    backgroundColor: colors.surface,
+    opacity: opacity.pressed,
   },
 });

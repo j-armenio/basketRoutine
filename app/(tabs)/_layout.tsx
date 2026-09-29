@@ -1,37 +1,22 @@
 import { Icon } from '@/components/Icon';
+import { TabBar } from '@/components/TabBar';
 import { colors } from '@/theme/colors';
-import { spacing, touch } from '@/theme/spacing';
-import { typography } from '@/theme/typography';
 import { ResumeBanner } from '@/features/workout/ResumeBanner';
-import { BottomTabBar, Tabs } from 'expo-router/js-tabs';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Tabs } from 'expo-router/js-tabs';
 
 export default function TabsLayout() {
-  const insets = useSafeAreaInsets();
-
   return (
     <Tabs
-      // The banner sits above the bar and stays up while the keyboard is open:
-      // `tabBarHideOnKeyboard` only hides the BottomTabBar.
+      // The banner sits above the bar and stays up while the keyboard is open: the bar hides
+      // itself then.
       tabBar={(props) => (
         <>
           <ResumeBanner />
-          <BottomTabBar {...props} />
+          <TabBar {...props} />
         </>
       )}
       screenOptions={{
         headerShown: false,
-        tabBarHideOnKeyboard: true,
-        tabBarActiveTintColor: colors.accent,
-        tabBarInactiveTintColor: colors.tabInactive,
-        tabBarLabelStyle: { fontSize: typography.caption.fontSize, fontWeight: '600' },
-        tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
-          height: touch.primary + spacing.sm + insets.bottom,
-          paddingTop: spacing.xs,
-          paddingBottom: spacing.xs + insets.bottom,
-        },
         sceneStyle: { backgroundColor: colors.background },
       }}
     >
@@ -40,7 +25,9 @@ export default function TabsLayout() {
         options={{
           title: 'Workout',
           tabBarAccessibilityLabel: 'Workout',
-          tabBarIcon: ({ color }) => <Icon name="sports_basketball" color={color} />,
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="sports_basketball" size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
@@ -48,7 +35,9 @@ export default function TabsLayout() {
         options={{
           title: 'Exercises',
           tabBarAccessibilityLabel: 'Exercises',
-          tabBarIcon: ({ color }) => <Icon name="format_list_bulleted" color={color} />,
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="format_list_bulleted" size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
@@ -56,7 +45,7 @@ export default function TabsLayout() {
         options={{
           title: 'History',
           tabBarAccessibilityLabel: 'History',
-          tabBarIcon: ({ color }) => <Icon name="history" color={color} />,
+          tabBarIcon: ({ color, size }) => <Icon name="history" size={size} color={color} />,
         }}
       />
     </Tabs>

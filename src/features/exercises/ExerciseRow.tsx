@@ -1,7 +1,8 @@
+import { AppText } from '@/components/AppText';
 import { ListItem } from '@/components/ListItem';
 import type { Exercise } from '@/db/types';
 import { TRACKING_LABELS } from '@/domain/types';
-import { radius } from '@/theme/spacing';
+import { radius, size } from '@/theme/spacing';
 import type { AndroidSymbol } from 'expo-symbols';
 import { useState } from 'react';
 import { StyleSheet } from 'react-native';
@@ -23,14 +24,32 @@ export function ExerciseRow({ exercise, onPress, rightIcon = 'chevron_right' }: 
   const [previewing, setPreviewing] = useState(false);
   const tracking = TRACKING_LABELS[exercise.trackingType];
   const subtitle = exercise.isCustom ? `${tracking} · Custom` : tracking;
+  // The Custom tag in green, inside the gray subtitle.
+  const shownSubtitle = exercise.isCustom ? (
+    <>
+      {`${tracking} · `}
+      <AppText variant="subtitle" weight="semiBold" tone="green">
+        Custom
+      </AppText>
+    </>
+  ) : (
+    tracking
+  );
   const media = exerciseMedia(exercise);
   return (
     <ListItem
       accessibilityLabel={`${exercise.name}, ${subtitle}`}
       accessibilityHint={media ? 'Hold to play its media' : undefined}
-      left={<MediaView media={media} playing={previewing} style={styles.thumb} iconSize={24} />}
+      left={
+        <MediaView
+          media={media}
+          playing={previewing}
+          style={styles.thumb}
+          iconSize={size.iconLarge}
+        />
+      }
       title={exercise.name}
-      subtitle={subtitle}
+      subtitle={shownSubtitle}
       rightIcon={rightIcon}
       onPress={onPress}
       delayLongPress={250}
@@ -40,12 +59,10 @@ export function ExerciseRow({ exercise, onPress, rightIcon = 'chevron_right' }: 
   );
 }
 
-const THUMB_SIZE = 64;
-
 const styles = StyleSheet.create({
   thumb: {
-    width: THUMB_SIZE,
-    height: THUMB_SIZE,
-    borderRadius: radius.sm,
+    width: size.listThumbnail,
+    height: size.listThumbnail,
+    borderRadius: radius.input,
   },
 });

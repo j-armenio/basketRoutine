@@ -1,5 +1,7 @@
 import { db } from '@/db/client';
 import { getExercise, listExercises, type ExerciseFilter } from '@/db/repositories/exercises';
+import { listExerciseResults } from '@/db/repositories/sessions';
+import { exerciseStats } from '@/domain/exerciseStats';
 import { useMemo } from 'react';
 import { useDataVersion } from '../dataStore';
 import { groupByCategory } from './catalogList';
@@ -33,5 +35,17 @@ export function useExercise(id: number | undefined) {
     if (id === undefined) return undefined;
     const exercise = getExercise(db, id);
     return exercise && !exercise.archivedAt ? exercise : undefined;
+  }, [id, version]);
+}
+
+/** How many recent sessions an exercise's stats list. */
+const RECENT_SESSIONS = 3;
+
+/** An exercise's stats from the finished sessions that hold it (see `exerciseStats`). */
+export function useExerciseStats(id: number) {
+  const version = useDataVersion();
+  return useMemo(() => {
+    void version; // re-read after any write
+    return exerciseStats(listExerciseResults(db, id), RECENT_SESSIONS);
   }, [id, version]);
 }

@@ -3,6 +3,7 @@ import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { IconButton } from '@/components/IconButton';
+import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import { useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
@@ -33,15 +34,16 @@ export function TemplateExerciseCard({ exercise, index, count }: TemplateExercis
   const move = (delta: -1 | 1) => updateDraft((draft) => moveExercise(draft, exercise.key, delta));
 
   return (
-    <Card>
+    <Card variant="compact" style={styles.card}>
       <View style={styles.header}>
         <View style={styles.titles}>
-          <AppText variant="heading">{exercise.name}</AppText>
-          <AppText variant="caption" tone="muted">
+          <AppText variant="cardTitle">{exercise.name}</AppText>
+          <AppText variant="caption" tone="secondary">
             {modeSubtitle(exercise.targetMode)}
           </AppText>
         </View>
         <IconButton
+          color={colors.iconMuted}
           icon="more_vert"
           accessibilityLabel={`${exercise.name} menu`}
           onPress={() => setMenuOpen(true)}
@@ -92,15 +94,22 @@ export function TemplateExerciseCard({ exercise, index, count }: TemplateExercis
 }
 
 const styles = StyleSheet.create({
+  // Like the active workout's card.
+  card: {
+    paddingRight: spacing.md,
+  },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: spacing.sm,
   },
   titles: {
     flex: 1,
+    gap: spacing.xxs,
+    paddingTop: spacing.xs,
   },
   table: {
     gap: spacing.sm,
+    paddingRight: spacing.xs,
   },
 });

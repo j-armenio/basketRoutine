@@ -59,10 +59,12 @@ describe('fgBand', () => {
     [0.399, 'poor'],
     [0.4, 'neutral'],
     [0.599, 'neutral'],
-    [0.6, 'good'],
+    [0.6, 'neutral'],
+    [0.601, 'good'],
     [1, 'good'],
-    // on the rounded percent: 0.5996 reads "60%", 0.3996 reads "40%"
-    [0.5996, 'good'],
+    // on the rounded percent: 0.6004 reads "60%", 0.3996 reads "40%"
+    [0.6004, 'neutral'],
+    [0.6006, 'good'],
     [0.3996, 'neutral'],
   ] as const)('%s -> %s', (ratio, band) => {
     expect(fgBand(ratio)).toBe(band);

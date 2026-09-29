@@ -1,8 +1,7 @@
 import { AppText } from '@/components/AppText';
 import type { TargetMode } from '@/domain/types';
-import { spacing } from '@/theme/spacing';
 import { StyleSheet, View } from 'react-native';
-import { setTable } from './setTable';
+import { columnRoles, setTable } from './setTable';
 
 const MODE_SUBTITLE = {
   attempts: 'Fixed attempts · log makes',
@@ -22,10 +21,16 @@ type SetTableHeaderProps = {
    * editor: the target is the only value, so its column takes the rest of the row.
    */
   hideLogged?: boolean;
+  /** The history's read-only table: MAKES and ATTEMPTS share the room evenly. */
+  readOnly?: boolean;
 };
 
 /** The column titles above an exercise's sets, lined up with `setTable`. */
-export function SetTableHeader({ targetMode, hideLogged = false }: SetTableHeaderProps) {
+export function SetTableHeader({
+  targetMode,
+  hideLogged = false,
+  readOnly = false,
+}: SetTableHeaderProps) {
   const numberColumn = (
     <View style={setTable.numberColumn}>
       <HeaderLabel>SET</HeaderLabel>
@@ -37,7 +42,7 @@ export function SetTableHeader({ targetMode, hideLogged = false }: SetTableHeade
       <View style={setTable.row}>
         {numberColumn}
         {!hideLogged && (
-          <View style={styles.checkColumn}>
+          <View style={setTable.doneColumn}>
             <HeaderLabel>DONE</HeaderLabel>
           </View>
         )}
@@ -45,31 +50,43 @@ export function SetTableHeader({ targetMode, hideLogged = false }: SetTableHeade
     );
   }
 
-  const target = targetMode === 'attempts' ? 'ATTEMPTS' : 'MAKES';
-  const logged = targetMode === 'attempts' ? 'MAKES' : 'ATTEMPTS';
+  if (hideLogged) {
+    return (
+      <View style={setTable.row}>
+        {numberColumn}
+        <View style={setTable.loggedColumn}>
+          <HeaderLabel>{targetMode === 'attempts' ? 'ATTEMPTS' : 'MAKES'}</HeaderLabel>
+        </View>
+      </View>
+    );
+  }
+
+  const roles = columnRoles(targetMode);
+  const column = (role: 'logged' | 'target') =>
+    readOnly
+      ? setTable.valueColumn
+      : role === 'logged'
+        ? setTable.loggedColumn
+        : setTable.targetColumn;
   return (
     <View style={setTable.row}>
       {numberColumn}
-      <View style={hideLogged ? setTable.loggedColumn : setTable.targetColumn}>
-        <HeaderLabel>{target}</HeaderLabel>
+      <View style={column(roles.makes)}>
+        <HeaderLabel>MAKES</HeaderLabel>
       </View>
-      {!hideLogged && (
-        <>
-          <View style={setTable.loggedColumn}>
-            <HeaderLabel>{logged}</HeaderLabel>
-          </View>
-          <View style={setTable.fgColumn}>
-            <HeaderLabel>FG%</HeaderLabel>
-          </View>
-        </>
-      )}
+      <View style={column(roles.attempts)}>
+        <HeaderLabel>ATTEMPTS</HeaderLabel>
+      </View>
+      <View style={setTable.fgColumn}>
+        <HeaderLabel>FG%</HeaderLabel>
+      </View>
     </View>
   );
 }
 
 function HeaderLabel({ children }: { children: string }) {
   return (
-    <AppText variant="caption" tone="muted" style={styles.label}>
+    <AppText variant="label" tone="secondary" style={styles.label}>
       {children}
     </AppText>
   );
@@ -77,11 +94,6 @@ function HeaderLabel({ children }: { children: string }) {
 
 const styles = StyleSheet.create({
   label: {
-    fontWeight: '600',
     textAlign: 'center',
-  },
-  checkColumn: {
-    width: 56,
-    marginLeft: spacing.sm,
   },
 });

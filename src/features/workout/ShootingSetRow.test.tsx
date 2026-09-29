@@ -96,7 +96,7 @@ test('an invalid value is not saved and not marked while typing', async () => {
   expect(stored().loggedValue).toBe(1);
   expect(makes).toHaveDisplayValue('11');
   expect(screen.queryByText("Makes can't exceed attempts.")).toBeNull();
-  expect(makes).not.toHaveStyle({ borderColor: colors.danger });
+  expect(makes).not.toHaveStyle({ borderColor: colors.error });
 });
 
 test('blur rolls an invalid value back to the one at focus, in the DB too, and explains', async () => {
@@ -110,7 +110,7 @@ test('blur rolls an invalid value back to the one at focus, in the DB too, and e
 
   expect(stored().loggedValue).toBe(7);
   expect(makes).toHaveDisplayValue('7');
-  expect(makes).toHaveStyle({ borderColor: colors.danger });
+  expect(makes).toHaveStyle({ borderColor: colors.error });
   expect(screen.getByText("Makes can't exceed attempts.")).toBeOnTheScreen();
   expect(screen.getByLabelText('Set 1 FG%')).toHaveTextContent('70%');
 
@@ -128,7 +128,7 @@ test('a valid value survives blur with no error', async () => {
   await fireEvent(makes, 'blur');
 
   expect(stored().loggedValue).toBe(9);
-  expect(makes).not.toHaveStyle({ borderColor: colors.danger });
+  expect(makes).not.toHaveStyle({ borderColor: colors.error });
 });
 
 test('an empty target is rolled back on blur', async () => {
@@ -154,7 +154,7 @@ test('clearing the logged value leaves the set empty with no error', async () =>
 
   expect(stored().loggedValue).toBeNull();
   expect(screen.getByLabelText('Set 1 FG%')).toHaveTextContent('—');
-  expect(makes).not.toHaveStyle({ borderColor: colors.danger });
+  expect(makes).not.toHaveStyle({ borderColor: colors.error });
 });
 
 test('in makes mode a two-digit value passes through an invalid prefix with no error', async () => {
@@ -177,18 +177,21 @@ test('the FG% is colored by its band as the value changes', async () => {
   await setup('attempts');
   const makes = screen.getByLabelText('Set 1 makes');
   const fg = () => screen.getByLabelText('Set 1 FG%');
-  expect(fg()).toHaveStyle({ color: colors.textMuted });
+  expect(fg()).toHaveStyle({ color: colors.textSecondary });
 
   await fireEvent(makes, 'focus');
   await fireEvent.changeText(makes, '7');
   expect(fg()).toHaveTextContent('70%');
   expect(fg()).toHaveStyle({ color: colors.success });
 
+  await fireEvent.changeText(makes, '6');
+  expect(fg()).toHaveStyle({ color: colors.neutralStat }); // 60% exactly is neutral
+
   await fireEvent.changeText(makes, '5');
-  expect(fg()).toHaveStyle({ color: colors.textMuted });
+  expect(fg()).toHaveStyle({ color: colors.neutralStat });
 
   await fireEvent.changeText(makes, '3');
-  expect(fg()).toHaveStyle({ color: colors.danger });
+  expect(fg()).toHaveStyle({ color: colors.error });
 });
 
 test('unmounting with an invalid draft rolls it back as well', async () => {

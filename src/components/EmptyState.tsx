@@ -1,5 +1,5 @@
 import { colors } from '@/theme/colors';
-import { spacing } from '@/theme/spacing';
+import { size, spacing } from '@/theme/spacing';
 import type { AndroidSymbol } from 'expo-symbols';
 import { StyleSheet, View } from 'react-native';
 import { AppText } from './AppText';
@@ -16,10 +16,12 @@ type EmptyStateProps = {
 export function EmptyState({ icon, title, message, action }: EmptyStateProps) {
   return (
     <View style={styles.container}>
-      <Icon name={icon} size={48} color={colors.textMuted} />
-      <AppText variant="heading">{title}</AppText>
+      <Icon name={icon} size={size.placeholderIcon} color={colors.iconPlaceholder} />
+      <AppText variant="cardTitle" style={styles.centered}>
+        {title}
+      </AppText>
       {message && (
-        <AppText tone="muted" style={styles.message}>
+        <AppText variant="bodySmall" tone="secondary" style={styles.centered}>
           {message}
         </AppText>
       )}
@@ -34,9 +36,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.md,
-    padding: spacing.xl,
+    padding: spacing.xxl,
   },
-  message: {
+  centered: {
     textAlign: 'center',
   },
 });

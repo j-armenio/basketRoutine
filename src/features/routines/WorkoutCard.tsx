@@ -1,14 +1,13 @@
 import { ActionSheet } from '@/components/ActionSheet';
 import { AppText } from '@/components/AppText';
-import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { IconButton } from '@/components/IconButton';
 import type { WorkoutInRoutine } from '@/db/repositories/routines';
 import { formatExerciseList } from '@/domain/format';
 import { colors } from '@/theme/colors';
-import { radius, spacing, touch } from '@/theme/spacing';
+import { opacity, size, spacing } from '@/theme/spacing';
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, StyleSheet } from 'react-native';
 import { deleteWorkout } from './actions';
 
 type WorkoutCardProps = {
@@ -20,7 +19,7 @@ type WorkoutCardProps = {
   onMove: (delta: -1 | 1) => void;
 };
 
-/** A template on the Workout tab: tap the body to edit it, "Start" to begin a session from it. */
+/** A template on the Workout tab: tap the body to edit it, the play button to begin a session from it. */
 export function WorkoutCard({ workout, index, count, onStart, onEdit, onMove }: WorkoutCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -31,32 +30,30 @@ export function WorkoutCard({ workout, index, count, onStart, onEdit, onMove }: 
     ]);
 
   return (
-    <Card>
-      <View style={styles.header}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`Edit ${workout.name}`}
-          onPress={onEdit}
-          style={({ pressed }) => [styles.body, pressed && styles.pressed]}
-        >
-          <AppText variant="heading" numberOfLines={1}>
-            {workout.name}
-          </AppText>
-          <AppText tone="muted" numberOfLines={2}>
-            {formatExerciseList(workout.exercises.map((item) => item.exercise.name))}
-          </AppText>
-        </Pressable>
-        <IconButton
-          icon="more_vert"
-          accessibilityLabel={`${workout.name} menu`}
-          onPress={() => setMenuOpen(true)}
-        />
-      </View>
-      <Button
-        label="Start"
+    <Card variant="raised" style={styles.card}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Edit ${workout.name}`}
+        onPress={onEdit}
+        style={({ pressed }) => [styles.body, pressed && styles.pressed]}
+      >
+        <AppText weight="bold" numberOfLines={1}>
+          {workout.name}
+        </AppText>
+        <AppText variant="subtitle" tone="secondary" numberOfLines={2}>
+          {formatExerciseList(workout.exercises.map((item) => item.exercise.name))}
+        </AppText>
+      </Pressable>
+      <IconButton
+        icon="more_vert"
+        color={colors.iconMuted}
+        accessibilityLabel={`${workout.name} menu`}
+        onPress={() => setMenuOpen(true)}
+      />
+      <IconButton
+        variant="play"
         icon="play_arrow"
         accessibilityLabel={`Start ${workout.name}`}
-        fullWidth
         onPress={onStart}
       />
       <ActionSheet
@@ -85,18 +82,20 @@ export function WorkoutCard({ workout, index, count, onStart, onEdit, onMove }: 
 }
 
 const styles = StyleSheet.create({
-  header: {
+  card: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.xs,
+    paddingLeft: spacing.lg,
+    paddingRight: spacing.sm,
   },
   body: {
     flex: 1,
-    minHeight: touch.min,
+    minHeight: size.minTouchTarget,
     justifyContent: 'center',
-    borderRadius: radius.sm,
+    gap: spacing.xs,
   },
   pressed: {
-    backgroundColor: colors.surfaceElevated,
+    opacity: opacity.pressed,
   },
 });

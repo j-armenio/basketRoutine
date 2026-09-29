@@ -61,7 +61,7 @@ test('an invalid target rolls back on blur, with the reason', async () => {
 
   expect(target()).toBe(10);
   expect(input).toHaveDisplayValue('10');
-  expect(input).toHaveStyle({ borderColor: colors.danger });
+  expect(input).toHaveStyle({ borderColor: colors.error });
   expect(screen.getByText('The target must be a whole number of at least 1.')).toBeOnTheScreen();
 });
 

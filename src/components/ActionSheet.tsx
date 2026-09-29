@@ -1,5 +1,5 @@
 import { colors } from '@/theme/colors';
-import { radius, spacing } from '@/theme/spacing';
+import { opacity, radius, size, spacing } from '@/theme/spacing';
 import type { AndroidSymbol } from 'expo-symbols';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -44,7 +44,7 @@ export function ActionSheet({ visible, title, options, onClose }: ActionSheetPro
         />
         <SafeAreaView edges={['bottom']} style={styles.sheet}>
           {title && (
-            <AppText tone="muted" style={styles.title}>
+            <AppText variant="subtitle" weight="bold" tone="secondary" style={styles.title}>
               {title}
             </AppText>
           )}
@@ -71,7 +71,8 @@ export function ActionSheet({ visible, title, options, onClose }: ActionSheetPro
 type RowProps = Omit<ActionSheetOption, 'onPress'> & { onPress: () => void };
 
 function Row({ label, icon, destructive, disabled, onPress }: RowProps) {
-  const color = disabled ? colors.textDisabled : destructive ? colors.danger : colors.text;
+  const textColor = destructive ? colors.error : colors.textPrimary;
+  const iconColor = destructive ? colors.error : colors.iconMuted;
   return (
     <Pressable
       accessibilityRole="button"
@@ -79,10 +80,10 @@ function Row({ label, icon, destructive, disabled, onPress }: RowProps) {
       accessibilityState={{ disabled: !!disabled }}
       disabled={disabled}
       onPress={onPress}
-      style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.row, pressed && styles.pressed, disabled && styles.disabled]}
     >
-      {icon && <Icon name={icon} color={color} />}
-      <AppText variant="label" style={{ color }}>
+      {icon && <Icon name={icon} size={size.icon} color={iconColor} />}
+      <AppText weight="semiBold" style={{ color: textColor }}>
         {label}
       </AppText>
     </Pressable>
@@ -95,26 +96,30 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   backdrop: {
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: colors.scrim,
   },
   sheet: {
-    paddingTop: spacing.sm,
-    borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: radius.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    borderTopLeftRadius: radius.card,
+    borderTopRightRadius: radius.card,
     backgroundColor: colors.surface,
   },
   title: {
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.xl,
     paddingVertical: spacing.sm,
   },
   row: {
-    minHeight: 56,
+    minHeight: size.buttonPrimaryHeight,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
-    paddingHorizontal: spacing.lg,
+    gap: spacing.lg,
+    paddingHorizontal: spacing.xl,
   },
   pressed: {
-    backgroundColor: colors.surfaceElevated,
+    backgroundColor: colors.surfaceRaised,
+  },
+  disabled: {
+    opacity: opacity.disabled,
   },
 });

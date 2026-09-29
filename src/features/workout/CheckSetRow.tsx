@@ -1,11 +1,11 @@
-import { AppText } from '@/components/AppText';
 import { Icon } from '@/components/Icon';
 import { SwipeToDelete } from '@/components/SwipeToDelete';
 import { colors } from '@/theme/colors';
-import { radius, spacing, touch } from '@/theme/spacing';
+import { border, opacity, radius, size } from '@/theme/spacing';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { deleteSet, updateSet } from './actions';
 import type { SessionSetDetail } from './hooks';
+import { SetNumber } from './SetNumber';
 import { setTable } from './setTable';
 
 type CheckSetRowProps = {
@@ -25,20 +25,25 @@ export function CheckSetRow({ set, number, deletable }: CheckSetRowProps) {
       onDelete={() => deleteSet(set.id).ok}
     >
       <View style={setTable.row}>
-        <View style={setTable.numberColumn}>
-          <AppText variant="label" tone="muted">
-            {number}
-          </AppText>
+        <SetNumber number={number} />
+        <View style={setTable.doneColumn}>
+          <Pressable
+            accessibilityRole="checkbox"
+            accessibilityLabel={`Set ${number} done`}
+            accessibilityState={{ checked: set.completed }}
+            onPress={() => updateSet(set.id, { completed: !set.completed })}
+            style={({ pressed }) => [
+              setTable.doneBox,
+              styles.toggle,
+              set.completed && styles.done,
+              pressed && styles.pressed,
+            ]}
+          >
+            {set.completed && (
+              <Icon name="check" size={size.iconLarge} color={colors.onSecondary} />
+            )}
+          </Pressable>
         </View>
-        <Pressable
-          accessibilityRole="checkbox"
-          accessibilityLabel={`Set ${number} done`}
-          accessibilityState={{ checked: set.completed }}
-          onPress={() => updateSet(set.id, { completed: !set.completed })}
-          style={[styles.toggle, set.completed && styles.done]}
-        >
-          {set.completed && <Icon name="check" color={colors.onAccent} />}
-        </Pressable>
       </View>
     </SwipeToDelete>
   );
@@ -46,18 +51,18 @@ export function CheckSetRow({ set, number, deletable }: CheckSetRowProps) {
 
 const styles = StyleSheet.create({
   toggle: {
-    width: touch.min,
-    height: touch.min,
-    marginLeft: spacing.sm,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: radius.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surfaceElevated,
+    borderRadius: radius.input,
+    borderWidth: border.outline,
+    borderColor: colors.outlineStrong,
+    backgroundColor: colors.surfaceRaised,
   },
   done: {
-    borderColor: colors.accent,
-    backgroundColor: colors.accent,
+    borderColor: colors.secondaryOutline,
+    backgroundColor: colors.secondary,
+  },
+  pressed: {
+    opacity: opacity.pressed,
   },
 });

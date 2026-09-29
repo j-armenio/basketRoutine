@@ -17,6 +17,7 @@ import {
   finishSession,
   getInProgressSession,
   getSessionDetail,
+  listExerciseResults,
   listFinishedSessionsWithExercises,
   overwriteWorkoutFromSession,
   removeSessionExercise,
@@ -503,6 +504,52 @@ describe('history', () => {
     expect(reasonOf(() => deleteFinishedSession(db, running.id))).toBe('session_not_finished');
     expect(reasonOf(() => deleteFinishedSession(db, 999))).toBe('not_found');
     expect(getInProgressSession(db)?.id).toBe(running.id);
+  });
+});
+
+describe('listExerciseResults', () => {
+  test("the finished sessions holding the exercise, newest first, with only that exercise's rows", () => {
+    const db = createTestDb();
+    seedExercises(db);
+    const freeThrows = exerciseId(db, 'free_throws');
+    const figure8 = exerciseId(db, 'figure_8');
+    const finishWith = (name: string, day: number, ids: number[]) => {
+      const session = startEmptySession(db, name);
+      for (const id of ids) {
+        const drill = addSessionExercise(
+          db,
+          session.id,
+          id,
+          id === figure8 ? undefined : 'attempts',
+        );
+        const set = getSessionDetail(db, session.id)!.exercises.find((e) => e.id === drill.id)!
+          .sets[0];
+        updateSessionSet(db, set.id, {
+          completed: true,
+          loggedValue: set.targetValue === null ? null : 1,
+        });
+      }
+      finishSession(db, session.id);
+      db.update(sessions)
+        .set({ startedAt: new Date(2026, 8, day) })
+        .where(eq(sessions.id, session.id))
+        .run();
+      return session.id;
+    };
+    const older = finishWith('Older', 20, [freeThrows, figure8]);
+    finishWith('Checks only', 22, [figure8]);
+    const twice = finishWith('Twice', 25, [freeThrows, freeThrows]);
+    // an in-progress session doesn't count
+    const running = startEmptySession(db, 'Running');
+    addSessionExercise(db, running.id, freeThrows, 'attempts');
+
+    const results = listExerciseResults(db, freeThrows);
+
+    expect(results.map((result) => result.id)).toEqual([twice, older]);
+    expect(results[0].exercises).toHaveLength(2);
+    expect(results[1].exercises.map((exercise) => exercise.exerciseId)).toEqual([freeThrows]);
+    expect(results[1].exercises[0].sets[0].loggedValue).toBe(1);
+    expect(listExerciseResults(db, exerciseId(db, 'crossover'))).toEqual([]);
   });
 });
 

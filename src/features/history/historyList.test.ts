@@ -1,5 +1,13 @@
 import type { SessionSummary } from '@/domain/summary';
-import { groupByMonth, sessionResult, toHistoryItem, type HistoryItem } from './historyList';
+import {
+  chartDateLabels,
+  fgEvolution,
+  fgEvolutionLabel,
+  groupByMonth,
+  sessionResult,
+  toHistoryItem,
+  type HistoryItem,
+} from './historyList';
 
 const summary = (
   shooting: { makes: number; attempts: number },
@@ -141,5 +149,61 @@ describe('groupByMonth', () => {
 
   test('no items, no sections', () => {
     expect(groupByMonth([])).toEqual([]);
+  });
+});
+
+describe('fgEvolution', () => {
+  const shot = (id: number, day: number, makes: number, attempts: number): HistoryItem => ({
+    ...item(id, new Date(2026, 8, day, 10, id)),
+    summary: summary({ makes, attempts }, { completed: 0, total: 0 }),
+  });
+  const checksOnly = (id: number, day: number): HistoryItem => ({
+    ...item(id, new Date(2026, 8, day, 10, id)),
+    summary: summary({ makes: 0, attempts: 0 }, { completed: 1, total: 1 }),
+  });
+
+  test('keeps the last sessions with a shooting set, oldest first, skipping check-only ones', () => {
+    // newest first, as History reads them
+    const items = [
+      shot(7, 28, 5, 10),
+      checksOnly(6, 27),
+      shot(5, 26, 1, 4),
+      shot(4, 25, 3, 4),
+      shot(3, 24, 0, 5),
+      shot(2, 23, 2, 2),
+      shot(1, 22, 1, 1),
+    ];
+
+    const points = fgEvolution(items, 5);
+
+    expect(points.map((point) => point.id)).toEqual([2, 3, 4, 5, 7]);
+    expect(points.map((point) => point.fgPct)).toEqual([1, 0, 0.75, 0.25, 0.5]);
+  });
+
+  test('is empty when no session has a shooting set', () => {
+    expect(fgEvolution([checksOnly(1, 22)], 5)).toEqual([]);
+  });
+
+  test('one date label per run of points on the same day', () => {
+    const points = fgEvolution(
+      [shot(4, 28, 1, 2), shot(3, 25, 1, 2), shot(2, 25, 1, 2), shot(1, 25, 1, 2)],
+      5,
+    );
+
+    expect(chartDateLabels(points)).toEqual([
+      { label: 'Sep 25', first: 0, last: 2 },
+      { label: 'Sep 28', first: 3, last: 3 },
+    ]);
+  });
+
+  test('the screen reader label lists every point', () => {
+    const points = fgEvolution([shot(2, 28, 1, 3), shot(1, 25, 7, 10)], 5);
+
+    expect(fgEvolutionLabel(points)).toBe(
+      'FG% over the last 2 workouts: Sep 25 Workout 1 70%, Sep 28 Workout 2 33.3%',
+    );
+    expect(fgEvolutionLabel(points.slice(1))).toBe(
+      'FG% over the last workout: Sep 28 Workout 2 33.3%',
+    );
   });
 });

@@ -1,4 +1,5 @@
 import { AppText } from '@/components/AppText';
+import { BottomActionBar } from '@/components/BottomActionBar';
 import { Button } from '@/components/Button';
 import { ChipRow } from '@/components/ChipRow';
 import { EmptyState } from '@/components/EmptyState';
@@ -21,7 +22,7 @@ import { useExercise } from '@/features/exercises/hooks';
 import { exerciseMedia } from '@/features/exercises/mediaSource';
 import { MediaView } from '@/features/exercises/MediaView';
 import { leaveScreen } from '@/features/workout/navigation';
-import { radius, spacing } from '@/theme/spacing';
+import { radius, size, spacing } from '@/theme/spacing';
 import { launchImageLibraryAsync } from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState, type ReactNode } from 'react';
@@ -49,6 +50,7 @@ export default function EditExerciseScreen() {
     return (
       <Screen
         title="Edit Exercise"
+        titleVariant="title"
         left={
           <IconButton
             icon="close"
@@ -126,10 +128,11 @@ function ExerciseForm({ exercise }: { exercise: Exercise | undefined }) {
   return (
     <Screen
       title={editing ? 'Edit Exercise' : 'New Exercise'}
+      titleVariant="title"
       left={
         <IconButton icon="close" accessibilityLabel="Cancel" onPress={() => leaveScreen(router)} />
       }
-      right={<Button label="Save" onPress={save} />}
+      footer={<BottomActionBar label="Save Exercise" onPress={save} />}
       bottomInset
       keyboardAvoiding
     >
@@ -145,11 +148,17 @@ function ExerciseForm({ exercise }: { exercise: Exercise | undefined }) {
       </Field>
       <Field label="Media">
         <View testID="exercise-media">
-          <MediaView media={shownMedia} playing fit="contain" iconSize={40} style={styles.media} />
+          <MediaView
+            media={shownMedia}
+            playing
+            fit="contain"
+            iconSize={size.placeholderIcon}
+            style={styles.media}
+          />
         </View>
         <View style={styles.mediaButtons}>
           <Button
-            variant="secondary"
+            variant="outline"
             icon="photo_library"
             label={shownMedia ? 'Change media' : 'Choose media'}
             onPress={chooseMedia}
@@ -167,7 +176,7 @@ function ExerciseForm({ exercise }: { exercise: Exercise | undefined }) {
         </View>
       </Field>
       <Field label="Category">
-        <ChipRow options={CATEGORY_OPTIONS} value={category} onChange={change(setCategory)} />
+        <ChipRow options={CATEGORY_OPTIONS} value={category} onChange={change(setCategory)} wrap />
       </Field>
       <Field label="Tracking type">
         <ChipRow
@@ -175,9 +184,10 @@ function ExerciseForm({ exercise }: { exercise: Exercise | undefined }) {
           value={trackingType}
           onChange={change(setTrackingType)}
           disabled={editing}
+          wrap
         />
         {editing && (
-          <AppText variant="caption" tone="muted">
+          <AppText variant="caption" tone="secondary">
             Tracking type can&apos;t be changed after the exercise is created
           </AppText>
         )}
@@ -193,7 +203,7 @@ function ExerciseForm({ exercise }: { exercise: Exercise | undefined }) {
         />
       </Field>
       {error && (
-        <AppText tone="danger" accessibilityRole="alert">
+        <AppText tone="error" accessibilityRole="alert">
           {error}
         </AppText>
       )}
@@ -204,7 +214,7 @@ function ExerciseForm({ exercise }: { exercise: Exercise | undefined }) {
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <View style={styles.field}>
-      <AppText variant="label" tone="muted">
+      <AppText variant="subtitle" weight="bold" tone="secondary">
         {label}
       </AppText>
       {children}
@@ -218,8 +228,8 @@ const styles = StyleSheet.create({
   },
   media: {
     width: '100%',
-    height: 180,
-    borderRadius: radius.md,
+    height: size.mediaForm,
+    borderRadius: radius.button,
   },
   mediaButtons: {
     flexDirection: 'row',

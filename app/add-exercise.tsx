@@ -1,4 +1,4 @@
-import { ActionSheet } from '@/components/ActionSheet';
+import { Fab, FAB_CLEARANCE } from '@/components/Fab';
 import { IconButton } from '@/components/IconButton';
 import { Screen } from '@/components/Screen';
 import { TextField } from '@/components/TextField';
@@ -11,6 +11,7 @@ import { getDraft, updateDraft } from '@/features/routines/draftStore';
 import { addExercise as addToTemplate } from '@/features/routines/templateDraft';
 import { addExercise } from '@/features/workout/actions';
 import { useInProgressSession } from '@/features/workout/hooks';
+import { TargetModeSheet } from '@/features/workout/TargetModeSheet';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert } from 'react-native';
@@ -52,18 +53,13 @@ export default function AddExerciseScreen() {
   return (
     <Screen
       title="Add Exercise"
+      titleVariant="title"
       scroll={false}
       bottomInset
       left={<IconButton icon="close" accessibilityLabel="Close" onPress={() => router.back()} />}
-      right={
-        <IconButton
-          icon="add"
-          accessibilityLabel="New exercise"
-          onPress={() => router.push('/edit-exercise')}
-        />
-      }
     >
       <TextField
+        icon="search"
         accessibilityLabel="Search exercises"
         placeholder="Search exercises"
         value={search}
@@ -71,22 +67,21 @@ export default function AddExerciseScreen() {
         autoCorrect={false}
         returnKeyType="search"
       />
-      <ExerciseList sections={sections} rightIcon="add" onPressExercise={pick} />
-      <ActionSheet
-        visible={pending !== null}
-        title={pending ? `${pending.name}: what do you fix?` : undefined}
-        options={[
-          {
-            label: 'Fixed attempts — log makes',
-            icon: 'sports_basketball',
-            onPress: () => pending && add(pending, 'attempts'),
-          },
-          {
-            label: 'Fixed makes — log attempts',
-            icon: 'check',
-            onPress: () => pending && add(pending, 'makes'),
-          },
-        ]}
+      <ExerciseList
+        sections={sections}
+        rightIcon="add"
+        bottomClearance={FAB_CLEARANCE}
+        onPressExercise={pick}
+      />
+      <Fab
+        label="New Exercise"
+        icon="add"
+        accessibilityLabel="New exercise"
+        onPress={() => router.push('/edit-exercise')}
+      />
+      <TargetModeSheet
+        exerciseName={pending?.name ?? null}
+        onPick={(targetMode) => pending && add(pending, targetMode)}
         onClose={() => setPending(null)}
       />
     </Screen>

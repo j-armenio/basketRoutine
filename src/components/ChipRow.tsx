@@ -1,7 +1,8 @@
 import { colors } from '@/theme/colors';
-import { radius, spacing, touch } from '@/theme/spacing';
-import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { border, opacity, radius, size, spacing } from '@/theme/spacing';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { AppText } from './AppText';
+import { Icon } from './Icon';
 
 type ChipRowProps<T extends string> = {
   options: readonly { value: T; label: string }[];
@@ -9,10 +10,68 @@ type ChipRowProps<T extends string> = {
   onChange: (value: T) => void;
   /** Shows the selection but ignores taps. */
   disabled?: boolean;
+  /**
+   * Wraps the chips onto more lines (a form). Otherwise they scroll sideways, edge to edge (a
+   * filter above a list).
+   */
+  wrap?: boolean;
 };
 
-/** A horizontally scrollable row of single-select chips. */
-export function ChipRow<T extends string>({ options, value, onChange, disabled }: ChipRowProps<T>) {
+/**
+ * Single-select chips. The selected one is green with a check icon, so the color isn't the only
+ * signal.
+ */
+export function ChipRow<T extends string>({
+  options,
+  value,
+  onChange,
+  disabled,
+  wrap = false,
+}: ChipRowProps<T>) {
+  const chips = options.map((option) => {
+    const selected = option.value === value;
+    return (
+      <Pressable
+        key={option.value}
+        accessibilityRole="radio"
+        accessibilityLabel={option.label}
+        accessibilityState={{ selected, disabled: !!disabled }}
+        disabled={disabled}
+        onPress={() => onChange(option.value)}
+        style={({ pressed }) => [
+          styles.chip,
+          selected && styles.selected,
+          pressed && styles.pressed,
+          disabled && !selected && styles.dimmed,
+        ]}
+      >
+        {selected && (
+          <Icon
+            name="check"
+            size={size.iconSmall}
+            color={colors.onSecondary}
+            testID={`${option.label} selected`}
+          />
+        )}
+        <AppText
+          variant="bodySmall"
+          weight={selected ? 'bold' : 'semiBold'}
+          style={{ color: selected ? colors.onSecondary : colors.textPrimary }}
+        >
+          {option.label}
+        </AppText>
+      </Pressable>
+    );
+  });
+
+  if (wrap) {
+    return (
+      <View accessibilityRole="radiogroup" style={styles.wrap}>
+        {chips}
+      </View>
+    );
+  }
+
   return (
     <ScrollView
       horizontal
@@ -22,56 +81,47 @@ export function ChipRow<T extends string>({ options, value, onChange, disabled }
       style={styles.row}
       contentContainerStyle={styles.content}
     >
-      {options.map((option) => {
-        const selected = option.value === value;
-        return (
-          <Pressable
-            key={option.value}
-            accessibilityRole="radio"
-            accessibilityLabel={option.label}
-            accessibilityState={{ selected, disabled: !!disabled }}
-            disabled={disabled}
-            onPress={() => onChange(option.value)}
-            style={[
-              styles.chip,
-              selected && styles.selected,
-              disabled && !selected && styles.dimmed,
-            ]}
-          >
-            <AppText
-              variant="label"
-              style={{
-                color: selected ? colors.onAccent : disabled ? colors.textDisabled : colors.text,
-              }}
-            >
-              {option.label}
-            </AppText>
-          </Pressable>
-        );
-      })}
+      {chips}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  // A horizontal ScrollView grows by default, which would push the list below it away.
+  // A horizontal ScrollView grows by default, which would push the list below it away. It runs to
+  // the screen's edges, so the chips scroll under them.
   row: {
     flexGrow: 0,
+    marginHorizontal: -spacing.screenPadding,
   },
   content: {
-    gap: spacing.sm,
+    gap: spacing.chipGap,
+    paddingHorizontal: spacing.screenPadding,
+  },
+  wrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.chipGap,
   },
   chip: {
-    minHeight: touch.min,
-    justifyContent: 'center',
-    paddingHorizontal: spacing.lg,
-    borderRadius: radius.pill,
+    minHeight: size.chipHeight,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xsPlus,
+    paddingHorizontal: spacing.lg + spacing.xxs,
+    borderRadius: radius.chip,
+    borderWidth: border.outline,
+    borderColor: colors.outline,
     backgroundColor: colors.surface,
   },
   selected: {
-    backgroundColor: colors.accent,
+    paddingLeft: spacing.mdPlus,
+    borderColor: colors.secondaryOutline,
+    backgroundColor: colors.secondary,
+  },
+  pressed: {
+    opacity: opacity.pressed,
   },
   dimmed: {
-    opacity: 0.6,
+    opacity: opacity.disabled,
   },
 });

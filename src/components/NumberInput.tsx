@@ -1,5 +1,6 @@
 import { colors } from '@/theme/colors';
-import { input, radius, spacing, touch } from '@/theme/spacing';
+import { border, radius, size, spacing } from '@/theme/spacing';
+import { typography } from '@/theme/typography';
 import { useRef, useState } from 'react';
 import {
   Pressable,
@@ -19,6 +20,10 @@ type NumberInputProps = Omit<
 > & {
   /** Required: the field has no visible label of its own (e.g. "Set 2 makes"). */
   accessibilityLabel: string;
+  /**
+   * `large`: the emphasized field, the value the user logs (56 dp, green outline, bigger number).
+   * `compact`: a plain field, the fixed target (48 dp).
+   */
   size?: 'large' | 'compact';
   /** Red border, set by the owner once an invalid entry was rolled back. */
   invalid?: boolean;
@@ -63,7 +68,7 @@ export function NumberInput({
         keyboardType="number-pad"
         returnKeyType="done"
         selectTextOnFocus
-        placeholderTextColor={colors.textDisabled}
+        placeholderTextColor={colors.textSecondary}
         {...props}
         onFocus={handleFocus}
         onBlur={handleBlur}
@@ -91,24 +96,26 @@ export function NumberInput({
 const styles = StyleSheet.create({
   base: {
     paddingHorizontal: spacing.sm,
-    borderRadius: radius.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surfaceElevated,
-    color: colors.text,
-    fontWeight: '600',
+    borderRadius: radius.cell,
+    borderWidth: border.outline,
+    borderColor: 'transparent',
+    backgroundColor: colors.surfaceRaised,
+    color: colors.textPrimary,
     fontVariant: ['tabular-nums'],
     textAlign: 'center',
   },
   large: {
-    height: input.height,
-    fontSize: input.fontSize,
+    height: size.numberCellEmphasized,
+    borderColor: colors.secondaryOutline,
+    fontFamily: typography.headline.fontFamily,
+    fontSize: typography.headline.fontSize,
   },
   compact: {
-    minHeight: touch.min,
-    fontSize: 18,
+    height: size.numberCell,
+    fontFamily: typography.sectionTitle.fontFamily,
+    fontSize: typography.sectionTitle.fontSize,
   },
   invalid: {
-    borderColor: colors.danger,
+    borderColor: colors.error,
   },
 });

@@ -16,23 +16,24 @@ function contrast(foreground: string, background: string) {
 
 type Token = keyof typeof colors;
 
-// textDisabled is left out: WCAG exempts disabled controls.
+// Every text-on-background pair the design uses. Outlines and the empty check box's border are
+// non-text (3:1), and the scrim isn't a color text sits on.
 const readablePairs: [Token, Token][] = [
-  ['text', 'background'],
-  ['text', 'surface'],
-  ['textMuted', 'background'],
-  ['textMuted', 'surface'],
-  ['accent', 'background'],
-  ['accent', 'surface'],
-  ['danger', 'background'],
-  ['danger', 'surface'],
-  ['success', 'background'],
-  ['success', 'surface'],
-  // a pressed Card, so a pressed History row
-  ['success', 'surfaceElevated'],
-  ['tabInactive', 'surface'],
-  ['onAccent', 'accent'],
-  ['onAccent', 'accentPressed'],
+  ...(['background', 'backgroundDeep', 'surface', 'surfaceRaised'] as const).flatMap(
+    (background): [Token, Token][] => [
+      ['textPrimary', background],
+      ['textSecondary', background],
+      ['iconMuted', background],
+      ['success', background],
+      ['error', background],
+      ['neutralStat', background],
+      ['secondaryText', background],
+      ['primary', background],
+    ],
+  ),
+  ['onPrimary', 'primary'],
+  ['primary', 'primaryContainer'],
+  ['onSecondary', 'secondary'],
 ];
 
 test.each(readablePairs)('%s on %s has at least 4.5:1 contrast', (foreground, background) => {

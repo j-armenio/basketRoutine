@@ -1,5 +1,5 @@
 import { colors } from '@/theme/colors';
-import { spacing } from '@/theme/spacing';
+import { radius, size, spacing } from '@/theme/spacing';
 import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
@@ -7,7 +7,7 @@ import { AppText } from './AppText';
 import { haptics } from './haptics';
 import { Icon } from './Icon';
 
-const ACTION_WIDTH = 96;
+const ACTION_WIDTH = size.swipeAction;
 
 type SwipeToDeleteProps = {
   /** Names the delete action for screen readers (e.g. "Delete set 2"). */
@@ -53,8 +53,8 @@ export function SwipeToDelete({
         dragOffsetFromRightEdge={spacing.lg}
         renderRightActions={() => (
           <View style={styles.action}>
-            <Icon name="delete" color={colors.onAccent} />
-            <AppText variant="label" style={styles.actionText}>
+            <Icon name="delete" size={size.icon} color={colors.onPrimary} />
+            <AppText variant="subtitle" weight="bold" style={styles.actionText}>
               Delete
             </AppText>
           </View>
@@ -73,12 +73,13 @@ const styles = StyleSheet.create({
   },
   action: {
     width: ACTION_WIDTH,
+    borderRadius: radius.cell,
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.xs,
-    backgroundColor: colors.danger,
+    backgroundColor: colors.error,
   },
   actionText: {
-    color: colors.onAccent,
+    color: colors.onPrimary,
   },
 });

@@ -1,4 +1,6 @@
+import { BottomActionBar } from '@/components/BottomActionBar';
 import { Button } from '@/components/Button';
+import { ElapsedTimer } from '@/components/ElapsedTimer';
 import { EmptyState } from '@/components/EmptyState';
 import { IconButton } from '@/components/IconButton';
 import { haptics } from '@/components/haptics';
@@ -105,6 +107,7 @@ export default function ActiveWorkoutScreen() {
   return (
     <Screen
       title={session.name}
+      titleVariant="title"
       left={
         <IconButton
           icon="keyboard_arrow_down"
@@ -112,7 +115,8 @@ export default function ActiveWorkoutScreen() {
           onPress={() => leaveScreen(router)}
         />
       }
-      right={<Button label="Finish" onPress={finish} />}
+      right={<ElapsedTimer start={session.startedAt} />}
+      footer={<BottomActionBar label="Finish Workout" icon="check" onPress={finish} />}
       bottomInset
       keyboardAvoiding
     >

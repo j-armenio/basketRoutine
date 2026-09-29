@@ -6,6 +6,7 @@ import {
 import { createRoutine } from '@/db/repositories/routines';
 import {
   addSessionExercise,
+  addSessionSet,
   finishSession,
   getInProgressSession,
   getSessionDetail,
@@ -17,6 +18,7 @@ import { exercises, routines, sessions, workouts } from '@/db/schema';
 import { useDatabaseSetup } from '@/db/useDatabaseSetup';
 import type { Db, Exercise } from '@/db/types';
 import { notifyDataChanged } from '@/features/dataStore';
+import { colors } from '@/theme/colors';
 import { act, cleanup, fireEvent, screen, userEvent, within } from '@testing-library/react-native';
 import { eq } from 'drizzle-orm';
 import { renderRouter } from 'expo-router/testing-library';
@@ -281,7 +283,7 @@ describe('the Exercises tab', () => {
     await user.press(screen.getByRole('radio', { name: 'Custom' }));
 
     expect(screen.getByText('No custom exercises yet')).toBeOnTheScreen();
-    expect(screen.getByText('Create one with the + button.')).toBeOnTheScreen();
+    expect(screen.getByText('Create one with New Exercise.')).toBeOnTheScreen();
     expectAccessibleControls();
   });
 
@@ -439,7 +441,7 @@ describe('creating', () => {
     expect(bigMedia().getByTestId('media-placeholder', HIDDEN)).toBeOnTheScreen();
     expectAccessibleControls();
 
-    await user.press(screen.getByRole('button', { name: 'Save' }));
+    await user.press(screen.getByRole('button', { name: 'Save Exercise' }));
 
     expect(screen.getByText("The name can't be empty.")).toBeOnTheScreen();
     expect(app.getPathname()).toBe('/edit-exercise');
@@ -483,7 +485,7 @@ describe('creating', () => {
     await user.press(screen.getByRole('radio', { name: 'Footwork' }));
     await user.press(screen.getByRole('radio', { name: 'Check' }));
     await user.type(screen.getByLabelText('Description'), 'Weave through five cones');
-    await user.press(screen.getByRole('button', { name: 'Save' }));
+    await user.press(screen.getByRole('button', { name: 'Save Exercise' }));
 
     expect(app.getPathname()).toBe('/exercises');
     const created = customByName('Cone Slalom')!;
@@ -542,7 +544,7 @@ describe('editing', () => {
     await user.type(screen.getByLabelText('Description'), 'From the logo');
     pickNext({ uri: 'file:///cache/picked/new', mimeType: 'image/png' });
     await user.press(screen.getByRole('button', { name: 'Change media' }));
-    await user.press(screen.getByRole('button', { name: 'Save' }));
+    await user.press(screen.getByRole('button', { name: 'Save Exercise' }));
 
     expect(app.getPathname()).toBe(`/exercise/${custom.id}`);
     expect(screen.getByRole('header', { name: 'Logo Threes' })).toBeOnTheScreen();
@@ -570,7 +572,7 @@ describe('editing', () => {
     await user.press(screen.getByRole('button', { name: 'Remove media' }));
     expect(screen.getByTestId('media-placeholder', HIDDEN)).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'Choose media' })).toBeOnTheScreen();
-    await user.press(screen.getByRole('button', { name: 'Save' }));
+    await user.press(screen.getByRole('button', { name: 'Save Exercise' }));
 
     expect(getExercise(db, custom.id)?.mediaUrl).toBeNull();
     expect(files.size).toBe(0);
@@ -582,7 +584,7 @@ describe('editing', () => {
     const user = setupUser();
 
     await user.clear(screen.getByLabelText('Exercise name'));
-    await user.press(screen.getByRole('button', { name: 'Save' }));
+    await user.press(screen.getByRole('button', { name: 'Save Exercise' }));
 
     expect(screen.getByText("The name can't be empty.")).toBeOnTheScreen();
     expect(getExercise(db, custom.id)?.name).toBe('Deep Threes');
@@ -609,7 +611,7 @@ describe('editing', () => {
     await pressMenu(user, 'Edit');
     await user.clear(screen.getByLabelText('Exercise name'));
     await user.type(screen.getByLabelText('Exercise name'), 'Logo Threes');
-    await user.press(screen.getByRole('button', { name: 'Save' }));
+    await user.press(screen.getByRole('button', { name: 'Save Exercise' }));
     await user.press(screen.getByRole('button', { name: 'Back' }));
 
     await user.press(tab('Workout'));
@@ -728,7 +730,7 @@ describe('the picker', () => {
     await user.press(screen.getByRole('button', { name: 'New exercise' }));
     expect(app.getPathname()).toBe('/edit-exercise');
     await user.type(screen.getByLabelText('Exercise name'), 'Deep Threes');
-    await user.press(screen.getByRole('button', { name: 'Save' }));
+    await user.press(screen.getByRole('button', { name: 'Save Exercise' }));
 
     expect(app.getPathname()).toBe('/add-exercise');
     expect(screen.getByText('Deep Threes')).toBeOnTheScreen();
@@ -754,7 +756,7 @@ describe('the picker', () => {
     await user.press(screen.getByRole('button', { name: 'New exercise' }));
     await user.type(screen.getByLabelText('Exercise name'), 'Cone Slalom');
     await user.press(screen.getByRole('radio', { name: 'Check' }));
-    await user.press(screen.getByRole('button', { name: 'Save' }));
+    await user.press(screen.getByRole('button', { name: 'Save Exercise' }));
 
     expect(app.getPathname()).toBe('/add-exercise');
     await user.press(screen.getByText('Cone Slalom'));
@@ -793,7 +795,7 @@ describe('finishing after an exercise was deleted mid-session', () => {
     const makes = screen.getByLabelText('Set 1 makes');
     await user.clear(makes);
     await user.type(makes, '7');
-    await user.press(screen.getByRole('button', { name: 'Finish' }));
+    await user.press(screen.getByRole('button', { name: 'Finish Workout' }));
     await pressAlert('Finish');
 
     expect(app.getPathname()).toMatch(/^\/workout-summary\/\d+$/);
@@ -811,7 +813,7 @@ describe('finishing after an exercise was deleted mid-session', () => {
     const makes = screen.getByLabelText('Set 1 makes');
     await user.clear(makes);
     await user.type(makes, '7');
-    await user.press(screen.getByRole('button', { name: 'Finish' }));
+    await user.press(screen.getByRole('button', { name: 'Finish Workout' }));
     await pressAlert('Finish');
 
     expect(app.getPathname()).toMatch(/^\/workout-summary\/\d+$/);
@@ -825,5 +827,150 @@ describe('finishing after an exercise was deleted mid-session', () => {
       'Finish workout?',
       'Update "Mixed"?',
     ]);
+  });
+});
+
+/** A finished session holding the exercise, on `day` of September, with these sets. */
+function finishedWith(
+  exercise: Exercise,
+  day: number,
+  sets: { logged?: number; done?: boolean }[],
+) {
+  const session = db
+    .insert(sessions)
+    .values({ name: 'Practice', status: 'in_progress', startedAt: new Date(2026, 8, day, 10, 0) })
+    .returning()
+    .get();
+  const drill = addSessionExercise(
+    db,
+    session.id,
+    exercise.id,
+    exercise.trackingType === 'check' ? null : 'attempts',
+  );
+  sets.forEach((set, index) => {
+    const row =
+      getSessionDetail(db, session.id)!.exercises[0].sets[index] ?? addSessionSet(db, drill.id);
+    updateSessionSet(db, row.id, {
+      ...(set.logged === undefined ? {} : { loggedValue: set.logged }),
+      ...(set.done === undefined ? {} : { completed: set.done }),
+    });
+  });
+  finishSession(db, session.id);
+  notifyDataChanged();
+}
+
+describe('your stats', () => {
+  test('an exercise never logged says so', async () => {
+    await launch(`/exercise/${exerciseId('free_throws')}`);
+
+    expect(screen.getByRole('header', { name: 'Your stats' })).toBeOnTheScreen();
+    expect(screen.getByText('No sessions yet.')).toBeOnTheScreen();
+  });
+
+  test('a shooting drill: best session, the overall FG%, the count and the recent sessions', async () => {
+    // 10 attempts per set (the default), makes logged
+    finishedWith(seeded('free_throws'), 20, [{ logged: 7 }]); // 70%
+    finishedWith(seeded('free_throws'), 25, [{ logged: 3 }]); // 30%
+    finishedWith(seeded('mikan_drill'), 26, [{ logged: 1 }]); // another exercise: left out
+    await launch(`/exercise/${exerciseId('free_throws')}`);
+
+    expect(screen.getByText('Best FG%')).toBeOnTheScreen();
+    expect(screen.getAllByText('70%')[0]).toHaveStyle({ color: colors.success });
+    expect(screen.getByText('Average')).toBeOnTheScreen();
+    // Σmakes / Σattempts = 10 / 20
+    expect(screen.getByText('50%')).toHaveStyle({ color: colors.neutralStat });
+    expect(screen.getByText('Sessions')).toBeOnTheScreen();
+    expect(screen.getByText('2')).toBeOnTheScreen();
+    // newest first
+    expect(screen.getAllByText(/^(Fri|Sun), Sep \d+$/).map((node) => node.props.children)).toEqual([
+      'Fri, Sep 25',
+      'Sun, Sep 20',
+    ]);
+    expect(screen.getByText('3 / 10')).toBeOnTheScreen();
+    expect(screen.getByText('30%')).toHaveStyle({ color: colors.error });
+    expectAccessibleControls();
+  });
+
+  test('a check drill: the sessions and the done sets', async () => {
+    finishedWith(seeded('figure_8'), 20, [{ done: true }, { done: false }]);
+    await launch(`/exercise/${exerciseId('figure_8')}`);
+
+    expect(screen.getByText('Done')).toBeOnTheScreen();
+    expect(screen.getByText('1 / 2')).toBeOnTheScreen();
+    expect(screen.getByText('1 / 2 done')).toBeOnTheScreen();
+    expect(screen.queryByText('Best FG%')).toBeNull();
+  });
+});
+
+describe('Add to Routine', () => {
+  const addToRoutine = () => screen.getByRole('button', { name: 'Add to Routine' });
+
+  test('with no routine, the chooser says so', async () => {
+    const app = await launch(`/exercise/${exerciseId('free_throws')}`);
+    const user = setupUser();
+
+    await user.press(addToRoutine());
+
+    expect(app.getPathname()).toBe('/add-to-routine');
+    expect(screen.getByText('No routines yet')).toBeOnTheScreen();
+    expectAccessibleControls();
+  });
+
+  test('a shooting drill asks its mode, then lands in the editor with it added; Save keeps it', async () => {
+    const morning = makeTemplate('Morning', seeded('figure_8'), false);
+    const app = await launch(`/exercise/${exerciseId('free_throws')}`);
+    const user = setupUser();
+
+    await user.press(addToRoutine());
+    expect(screen.getByRole('header', { name: 'Routine of Morning' })).toBeOnTheScreen();
+    expectAccessibleControls();
+    await user.press(screen.getByRole('button', { name: 'Add to Morning' }));
+    expect(screen.getByText('Free Throws: what do you fix?')).toBeOnTheScreen();
+    await user.press(screen.getByRole('button', { name: 'Fixed makes — log attempts' }));
+
+    expect(app.getPathname()).toBe('/edit-workout');
+    expect(screen.getByRole('header', { name: 'Edit Workout' })).toBeOnTheScreen();
+    expect(screen.getByText('Fixed makes · log attempts')).toBeOnTheScreen();
+    // nothing is written until Save
+    expect(getWorkoutWithExercises(db, morning.id)!.exercises).toHaveLength(1);
+
+    await user.press(screen.getByRole('button', { name: 'Save' }));
+
+    const saved = getWorkoutWithExercises(db, morning.id)!.exercises;
+    expect(saved.map((item) => [item.exercise.seedKey, item.targetMode])).toEqual([
+      ['figure_8', null],
+      ['free_throws', 'makes'],
+    ]);
+    // back on the exercise, the chooser gone
+    expect(app.getPathname()).toBe(`/exercise/${exerciseId('free_throws')}`);
+  });
+
+  test('Cancel in the editor asks first, and discarding leaves the template alone', async () => {
+    const morning = makeTemplate('Morning', seeded('figure_8'), false);
+    await launch(`/exercise/${exerciseId('free_throws')}`);
+    const user = setupUser();
+
+    await user.press(addToRoutine());
+    await user.press(screen.getByRole('button', { name: 'Add to Morning' }));
+    await user.press(screen.getByRole('button', { name: 'Fixed attempts — log makes' }));
+    await user.press(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(lastAlert().title).toBe('Discard changes?');
+    await pressAlert('Discard');
+    expect(getWorkoutWithExercises(db, morning.id)!.exercises).toHaveLength(1);
+  });
+
+  test('a check drill skips the mode, and New Workout starts a template with it', async () => {
+    makeTemplate('Morning', seeded('free_throws'), false);
+    const app = await launch(`/exercise/${exerciseId('figure_8')}`);
+    const user = setupUser();
+
+    await user.press(addToRoutine());
+    await user.press(screen.getByRole('button', { name: 'New workout in Routine of Morning' }));
+
+    expect(app.getPathname()).toBe('/edit-workout');
+    expect(screen.getByRole('header', { name: 'New Workout' })).toBeOnTheScreen();
+    expect(screen.getByText('Figure 8')).toBeOnTheScreen();
+    expect(screen.getByText('Check when done')).toBeOnTheScreen();
   });
 });

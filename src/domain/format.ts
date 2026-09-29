@@ -23,12 +23,25 @@ export function parseCount(text: string): ParsedCount {
   return Number.isSafeInteger(value) ? { kind: 'value', value } : { kind: 'invalid' };
 }
 
-/** `42 min`, or `1 h 05 min` from one hour on. Rounds to the nearest minute. */
+/** `42 min`, or `1 h 05 min` from one hour on, rounded to the nearest minute; `< 1 min` under one. */
 export function formatDuration(ms: number): string {
+  if (ms < 60_000) return '< 1 min';
   const totalMinutes = Math.max(0, Math.round(ms / 60_000));
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
   return hours === 0 ? `${minutes} min` : `${hours} h ${String(minutes).padStart(2, '0')} min`;
+}
+
+/** The active workout's timer: `04:07`, or `1:02:03` from one hour on. Whole seconds, rounded down. */
+export function formatElapsed(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const seconds = total % 60;
+  const pad = (value: number) => String(value).padStart(2, '0');
+  return hours === 0
+    ? `${pad(minutes)}:${pad(seconds)}`
+    : `${hours}:${pad(minutes)}:${pad(seconds)}`;
 }
 
 /** `Thu, Sep 24, 2026`, in English like the rest of the UI. */
@@ -39,6 +52,16 @@ export function formatWorkoutDate(date: Date): string {
     day: 'numeric',
     year: 'numeric',
   });
+}
+
+/** `Sep 25`, the FG% chart's date labels. */
+export function formatShortDate(date: Date): string {
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+/** `Mon, Sep 28`, a recent session in an exercise's stats. */
+export function formatDayDate(date: Date): string {
+  return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
 /** `September 2026`, the History list's month headers. */

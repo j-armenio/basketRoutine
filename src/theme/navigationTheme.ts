@@ -5,10 +5,10 @@ export const navigationTheme: Theme = {
   ...DarkTheme,
   colors: {
     ...DarkTheme.colors,
-    primary: colors.accent,
+    primary: colors.primary,
     background: colors.background,
-    card: colors.surface,
-    text: colors.text,
-    border: colors.border,
+    card: colors.backgroundDeep,
+    text: colors.textPrimary,
+    border: colors.divider,
   },
 };

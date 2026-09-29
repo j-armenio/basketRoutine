@@ -21,11 +21,13 @@ function subscribe(listener: () => void): () => void {
 const notify = () => listeners.forEach((listener) => listener());
 
 /**
- * Starts editing `initial`. It doesn't notify: it runs while the editor renders for the first
- * time, and the editor reads the draft right after, so nobody is left with a stale one.
+ * Starts editing `initial`, from `current` when the draft opens with a change already made (Add to
+ * Routine opens it with the exercise added, so it counts as unsaved). It doesn't notify: it runs
+ * while the editor renders for the first time, and the editor reads the draft right after, so
+ * nobody is left with a stale one.
  */
-export function openDraft(initial: TemplateDraft): void {
-  state = { initial, current: initial };
+export function openDraft(initial: TemplateDraft, current: TemplateDraft = initial): void {
+  state = { initial, current };
 }
 
 /** Does nothing when no draft is open: a row that unmounts after Save still runs its rollback. */

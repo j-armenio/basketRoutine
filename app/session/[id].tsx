@@ -9,6 +9,7 @@ import { useFinishedSession } from '@/features/history/hooks';
 import { SessionExerciseView } from '@/features/history/SessionExerciseView';
 import { SessionTotals } from '@/features/history/SessionTotals';
 import { leaveScreen } from '@/features/workout/navigation';
+import { colors } from '@/theme/colors';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert } from 'react-native';
@@ -28,7 +29,7 @@ export default function SessionDetailScreen() {
   if (!session) {
     if (mountedWithSession) return null;
     return (
-      <Screen title="Workout" left={back} bottomInset>
+      <Screen title="Workout" titleVariant="titleLarge" left={back} bottomInset>
         <EmptyState
           icon="history"
           title="Workout not found"
@@ -63,10 +64,16 @@ export default function SessionDetailScreen() {
   return (
     <Screen
       title={session.name}
+      titleVariant="titleLarge"
       subtitle={`${date} · ${formatDuration(duration)}`}
       left={back}
       right={
-        <IconButton icon="delete" accessibilityLabel="Delete workout" onPress={confirmDelete} />
+        <IconButton
+          icon="delete"
+          color={colors.iconMuted}
+          accessibilityLabel="Delete workout"
+          onPress={confirmDelete}
+        />
       }
       bottomInset
     >

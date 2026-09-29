@@ -109,7 +109,9 @@ Phases are ordered so a usable prototype (empty workout logged on the court) exi
 - **Done when:** the polish works on the phone and CI is green.
 
 ### Phase 8 — Visual Redesign
-- A visual refresh of the whole app, planned in detail when the phase starts.
+- A visual refresh of the whole app from the developer's design handoff: a new theme and font, every screen restyled, the main actions moved to the bottom of the screen. Built in batches (foundations first, then the screens by flow).
+- A few features that came with the design: an elapsed timer in the active workout, an FG% evolution chart on History, per-exercise stats and "Add to Routine" on the exercise detail.
+- The final app icon and splash, checked on an APK.
 - **Done when:** every screen follows the new look on the phone.
 
 ### Phase 9 — Testing & Release
