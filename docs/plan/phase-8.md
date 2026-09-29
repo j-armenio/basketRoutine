@@ -92,11 +92,11 @@ After each step: `lint`, `format:check`, `typecheck` and `test` pass.
 - [x] Timer, `< 1 min`, FG% evolution, Your stats and Add to Routine, with tests.
 - [x] On the phone (Expo Go): the checks of step 5.
 - [x] `npm run lint`, `format:check`, `typecheck`, `test` and `npx expo-doctor` pass locally, and `db:generate` leaves the migrations unchanged.
-- [ ] CI is green on `main`.
+- [x] CI is green on `main`.
 
 ## Results
 
-Steps 1 to 5 done (2026-09-28): the on-phone check passed with no change asked; the commit (step 6) is next. All CI checks pass locally: lint, format, typecheck, 550 tests (488 before), `db:generate` with no schema change, `expo-doctor` 21/21.
+**Phase 8 done** (2026-09-28): the on-phone check passed with no change asked, and the phase commit (`2bb282b`) is green on `main`. All CI checks pass locally: lint, format, typecheck, 550 tests (488 before), `db:generate` with no schema change, `expo-doctor` 21/21.
 
 ### 1. Theme
 - `src/theme/`: `colors.ts` (the 21 tokens by their names, plus `scrim` for modal backdrops), `fonts.ts` (the four families and their files), `typography.ts` (the twelve token variants, plus `statMedium`, `subtitle`, `sectionHeader`, `micro`, `buttonCaps`, `buttonCompact` taken from the mockups, and `tabularNums`), `spacing.ts` (`spacing` with the named tokens and a 2 / 4 / 6 / 8 / 10 / 12 / 14 / 16 / 20 / 24 / 32 scale, `radius`, `size`, `opacity`, `elevation`, `border`), `navigationTheme.ts`. `colors.test.ts` checks every text color on the four backgrounds, plus `onPrimary` / `primary`, `primary` / `primaryContainer`, `onSecondary` / `secondary`.
