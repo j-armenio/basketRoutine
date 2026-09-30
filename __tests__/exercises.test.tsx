@@ -193,8 +193,15 @@ const HIDDEN = { includeHiddenElements: true };
 const bigMedia = () => within(screen.getByTestId('exercise-media'));
 const rowOf = (name: string) => screen.getByRole('button', { name: new RegExp(`^${name}`) });
 
+/** The seeded catalog's exercises in a category (before any custom one is made). */
+const seededIn = (category: Exercise['category']) =>
+  db.select().from(exercises).where(eq(exercises.category, category)).all().length;
+/** A category card, by its full name ("Shooting, 10 exercises") or its label alone ("Shooting"). */
+const card = (name: string) =>
+  screen.getByRole('button', { name: name.includes(', ') ? name : new RegExp(`^${name}, `) });
+
 describe('the Exercises tab', () => {
-  test('lists the catalog with its size in the subtitle, and search narrows it', async () => {
+  test('shows a card per category and one for Custom, each with its count', async () => {
     await launch();
     const user = setupUser();
 
@@ -202,92 +209,108 @@ describe('the Exercises tab', () => {
 
     expect(screen.getByRole('header', { name: 'Exercises' })).toBeOnTheScreen();
     expect(screen.getByText('38 exercises')).toBeOnTheScreen();
-    // the chip and the section header
-    expect(screen.getAllByText('Finishing')).toHaveLength(2);
-    expect(screen.getByRole('header', { name: 'Finishing' })).toBeOnTheScreen();
+    for (const [label, category] of [
+      ['Finishing', 'finishing'],
+      ['Ball Handling', 'ball_handling'],
+      ['Dribbling', 'dribbling'],
+      ['Shooting', 'shooting'],
+      ['Footwork', 'footwork'],
+    ] as const) {
+      expect(card(`${label}, ${seededIn(category)} exercises`)).toBeOnTheScreen();
+    }
+    expect(card('Custom, 0 exercises')).toBeOnTheScreen();
+    // no image yet: every card shows the placeholder, and no row is listed
+    expect(screen.getAllByTestId('category-placeholder', HIDDEN)).toHaveLength(6);
+    expect(screen.queryByText('Free Throws')).toBeNull();
+    expect(screen.queryByRole('radio')).toBeNull();
     expectAccessibleControls();
+  });
+
+  test('search swaps the cards for the matching exercises; clearing it brings them back', async () => {
+    await launch();
+    const user = setupUser();
+    await openExercisesTab(user);
 
     await search(user, 'FREE');
 
     expect(screen.getByText('Free Throws')).toBeOnTheScreen();
     expect(screen.getByText('Makes / Attempts')).toBeOnTheScreen();
+    expect(screen.getByRole('header', { name: 'Shooting' })).toBeOnTheScreen();
     expect(screen.queryByText('Mikan Drill')).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Shooting, / })).toBeNull();
     // the count is the catalog's, not the result's
     expect(screen.getByText('38 exercises')).toBeOnTheScreen();
+    expectAccessibleControls();
 
     await user.clear(screen.getByLabelText('Search exercises'));
     await search(user, 'nothing like this');
-
     expect(screen.getByText('No exercises found')).toBeOnTheScreen();
-    expect(screen.getByText('38 exercises')).toBeOnTheScreen();
-    expectAccessibleControls();
+
+    await user.clear(screen.getByLabelText('Search exercises'));
+    expect(card('Shooting')).toBeOnTheScreen();
+    expect(screen.queryByText('No exercises found')).toBeNull();
   });
 
-  test('a category chip filters, All clears it, and it combines with search', async () => {
-    await launch();
+  test('a category card opens its exercises, and a row there its detail', async () => {
+    const app = await launch();
     const user = setupUser();
     await openExercisesTab(user);
-    expect(screen.getByRole('radio', { name: 'All' })).toBeSelected();
 
-    await user.press(screen.getByRole('radio', { name: 'Shooting' }));
+    await user.press(card('Shooting'));
 
-    expect(screen.getByRole('radio', { name: 'Shooting' })).toBeSelected();
+    expect(app.getPathname()).toBe('/category/shooting');
+    // the title only: one category needs no section header
+    expect(screen.getAllByRole('header', { name: 'Shooting' })).toHaveLength(1);
+    expect(screen.getByText(`${seededIn('shooting')} exercises`)).toBeOnTheScreen();
     expect(screen.getByText('Free Throws')).toBeOnTheScreen();
     expect(screen.queryByText('Mikan Drill')).toBeNull();
-    expect(screen.queryByText('Figure 8')).toBeNull();
+    expectAccessibleControls();
 
-    await search(user, 'layups');
-    expect(screen.getByText('No exercises found')).toBeOnTheScreen();
+    await user.press(screen.getByText('Free Throws'));
+    expect(app.getPathname()).toBe(`/exercise/${exerciseId('free_throws')}`);
 
-    await user.clear(screen.getByLabelText('Search exercises'));
-    await search(user, 'spot');
-    expect(screen.getByText('Spot-Up Jumpers')).toBeOnTheScreen();
-
-    await user.clear(screen.getByLabelText('Search exercises'));
-    await user.press(screen.getByRole('radio', { name: 'All' }));
-    expect(screen.getByText('Mikan Drill')).toBeOnTheScreen();
+    await user.press(screen.getByRole('button', { name: 'Back' }));
+    expect(app.getPathname()).toBe('/category/shooting');
+    await user.press(screen.getByRole('button', { name: 'Back' }));
+    expect(app.getPathname()).toBe('/exercises');
   });
 
-  test('the Custom chip lists only custom exercises, of every category, and combines with search', async () => {
+  test('the Custom card lists only custom exercises, of every category, grouped', async () => {
     makeCustom({ name: 'My Threes', category: 'shooting' });
     makeCustom({ name: 'My Slalom', category: 'footwork', trackingType: 'check' });
-    await launch();
+    const app = await launch();
     const user = setupUser();
     await openExercisesTab(user);
 
-    await user.press(screen.getByRole('radio', { name: 'Custom' }));
+    expect(screen.getByText('40 exercises')).toBeOnTheScreen();
+    await user.press(card('Custom, 2 exercises'));
 
-    expect(screen.getByRole('radio', { name: 'Custom' })).toBeSelected();
-    expect(screen.getByRole('radio', { name: 'All' })).not.toBeSelected();
+    expect(app.getPathname()).toBe('/category/custom');
+    expect(screen.getByRole('header', { name: 'Custom' })).toBeOnTheScreen();
+    expect(screen.getByText('2 exercises')).toBeOnTheScreen();
     expect(screen.getByText('My Threes')).toBeOnTheScreen();
     expect(screen.getByText('My Slalom')).toBeOnTheScreen();
     expect(screen.queryByText('Free Throws')).toBeNull();
-    // grouped by category like the rest
-    expect(screen.getAllByText('Shooting')).toHaveLength(2); // the chip and the section
-    expect(screen.getAllByText('Footwork')).toHaveLength(2);
-    expect(screen.getByText('40 exercises')).toBeOnTheScreen(); // the count stays the catalog's
-
-    await search(user, 'slalom');
-    expect(screen.getByText('My Slalom')).toBeOnTheScreen();
-    expect(screen.queryByText('My Threes')).toBeNull();
-
-    await search(user, 'zzz');
-    expect(screen.getByText('No exercises found')).toBeOnTheScreen();
+    expect(screen.getByRole('header', { name: 'Shooting' })).toBeOnTheScreen();
+    expect(screen.getByRole('header', { name: 'Footwork' })).toBeOnTheScreen();
+    expectAccessibleControls();
   });
 
-  test('the Custom chip with no custom exercise says so', async () => {
+  test('the Custom card with no custom exercise says so', async () => {
     await launch();
     const user = setupUser();
     await openExercisesTab(user);
 
-    await user.press(screen.getByRole('radio', { name: 'Custom' }));
+    await user.press(card('Custom, 0 exercises'));
 
     expect(screen.getByText('No custom exercises yet')).toBeOnTheScreen();
-    expect(screen.getByText('Create one with New Exercise.')).toBeOnTheScreen();
+    expect(
+      screen.getByText('Create one with the + button on the Exercises tab.'),
+    ).toBeOnTheScreen();
     expectAccessibleControls();
   });
 
-  test('a custom exercise shows the Custom marker, and the count follows a new one', async () => {
+  test('a custom exercise shows the Custom marker, and the counts follow a new one', async () => {
     makeCustom();
     await launch();
     const user = setupUser();
@@ -295,8 +318,21 @@ describe('the Exercises tab', () => {
     await openExercisesTab(user);
 
     expect(screen.getByText('39 exercises')).toBeOnTheScreen();
+    // the seeded ones plus the new one
+    expect(card(`Shooting, ${seededIn('shooting')} exercises`)).toBeOnTheScreen();
+    expect(card('Custom, 1 exercise')).toBeOnTheScreen();
     await search(user, 'deep');
     expect(screen.getByText('Makes / Attempts · Custom')).toBeOnTheScreen();
+  });
+
+  test('an unknown category shows "Category not found"', async () => {
+    const app = await launch('/category/nope');
+
+    expect(screen.getByText('Category not found')).toBeOnTheScreen();
+    expectAccessibleControls();
+
+    await setupUser().press(screen.getByRole('button', { name: 'Back to Exercises' }));
+    expect(app.getPathname()).toBe('/exercises');
   });
 });
 
@@ -362,7 +398,7 @@ describe('media in the list', () => {
 });
 
 describe('the exercise detail', () => {
-  test('a predefined exercise shows its description, the placeholder, a read-only note and no menu', async () => {
+  test('a predefined exercise shows its description and the placeholder, and has no menu', async () => {
     const app = await launch();
     const user = setupUser();
     await openExercisesTab(user);
@@ -373,19 +409,18 @@ describe('the exercise detail', () => {
     expect(screen.getByRole('header', { name: 'Free Throws' })).toBeOnTheScreen();
     expect(screen.getByText('Shooting · Makes / Attempts')).toBeOnTheScreen();
     expect(screen.getByText(seeded('free_throws').description)).toBeOnTheScreen();
-    expect(screen.getByText("Predefined exercise. It can't be edited.")).toBeOnTheScreen();
+    expect(screen.queryByText(/Predefined exercise/)).toBeNull();
     expect(bigMedia().getByTestId('media-placeholder', HIDDEN)).toBeOnTheScreen();
     expect(screen.queryByRole('button', { name: 'Exercise menu' })).toBeNull();
     expectAccessibleControls();
   });
 
-  test('a custom exercise has no note and no description shows a placeholder', async () => {
+  test('a custom exercise with no description says so', async () => {
     const custom = makeCustom();
     await launch(`/exercise/${custom.id}`);
 
     expect(screen.getByRole('header', { name: 'Deep Threes' })).toBeOnTheScreen();
     expect(screen.getByText('No description.')).toBeOnTheScreen();
-    expect(screen.queryByText(/Predefined exercise/)).toBeNull();
   });
 
   test('an unknown or deleted id shows "Exercise not found"', async () => {
@@ -617,7 +652,7 @@ describe('editing', () => {
     await user.press(tab('Workout'));
     expect(screen.getByText('Free Throws, Logo Threes')).toBeOnTheScreen();
 
-    await user.press(tab('History'));
+    await user.press(tab('Profile'));
     await user.press(screen.getByRole('button', { name: /^Evening Workout, / }));
     expect(screen.getByText('Deep Threes')).toBeOnTheScreen();
     expect(screen.queryByText('Logo Threes')).toBeNull();
@@ -660,7 +695,7 @@ describe('deleting', () => {
 
     await user.press(tab('Workout'));
     expect(screen.getByText('Free Throws')).toBeOnTheScreen();
-    await user.press(tab('History'));
+    await user.press(tab('Profile'));
     await user.press(screen.getByRole('button', { name: /^Evening Workout, / }));
     expect(screen.getByText('Deep Threes')).toBeOnTheScreen();
   });

@@ -32,8 +32,14 @@ export const radius = {
   chip: 24,
   /** The extended FAB (from the Exercises mockup). */
   fab: 18,
-  pill: 999,
+  /** The tactical board: the editor's court, the thumbnail, a toolbar button, the expand badge. */
+  court: 24,
+  courtThumbnail: 14,
+  boardTool: 18,
+  boardBadge: 10,
 };
+
+// A pill or a circle takes half of its own height as its radius.
 
 export const size = {
   minTouchTarget: 48,
@@ -41,6 +47,8 @@ export const size = {
   inputHeight: 52,
   chipHeight: 48,
   iconButton: 48,
+  /** The outlined icon button's ring, inside its 48 dp target. */
+  iconButtonRing: 36,
   playButton: 52,
   checkboxCell: 52,
   listThumbnail: 64,
@@ -73,6 +81,27 @@ export const size = {
   textArea: 96,
   /** The chart's plot height, axis labels included. */
   chartHeight: 150,
+  /** A category card on the Exercises tab (two per row). */
+  categoryCard: 120,
+  /** The profile photo on the Profile tab, and on Edit Profile. */
+  avatar: 80,
+  avatarLarge: 120,
+  /** The tactical board's toolbar: a tool button (5 in a row) and Undo / Clear, above them. */
+  boardTool: 48,
+  boardAction: 48,
+  /** The expand icon's square on the thumbnail. */
+  boardBadge: 32,
+};
+
+/**
+ * The tactical board's stroke widths, in dp: the editor's, and the thinner ones of the thumbnail
+ * (`compact`). A mark is drawn over its halo, wider.
+ */
+export const boardStroke = {
+  line: 1.6,
+  mark: 3.5,
+  halo: 7,
+  compact: { line: 1.1, mark: 2.6, halo: 6.1 },
 };
 
 /** Pressed and disabled states: the tokens have no colors for them. */

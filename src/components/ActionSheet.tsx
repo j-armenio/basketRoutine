@@ -11,6 +11,8 @@ export type ActionSheetOption = {
   icon?: AndroidSymbol;
   destructive?: boolean;
   disabled?: boolean;
+  /** The current choice, in a menu that picks one: a check at the end of the row. */
+  selected?: boolean;
   onPress: () => void;
 };
 
@@ -55,6 +57,7 @@ export function ActionSheet({ visible, title, options, onClose }: ActionSheetPro
               icon={option.icon}
               destructive={option.destructive}
               disabled={option.disabled}
+              selected={option.selected}
               onPress={() => {
                 option.onPress();
                 onClose();
@@ -70,22 +73,23 @@ export function ActionSheet({ visible, title, options, onClose }: ActionSheetPro
 
 type RowProps = Omit<ActionSheetOption, 'onPress'> & { onPress: () => void };
 
-function Row({ label, icon, destructive, disabled, onPress }: RowProps) {
+function Row({ label, icon, destructive, disabled, selected, onPress }: RowProps) {
   const textColor = destructive ? colors.error : colors.textPrimary;
   const iconColor = destructive ? colors.error : colors.iconMuted;
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
-      accessibilityState={{ disabled: !!disabled }}
+      accessibilityState={{ disabled: !!disabled, selected: !!selected }}
       disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => [styles.row, pressed && styles.pressed, disabled && styles.disabled]}
     >
       {icon && <Icon name={icon} size={size.icon} color={iconColor} />}
-      <AppText weight="semiBold" style={{ color: textColor }}>
+      <AppText weight="semiBold" style={[styles.label, { color: textColor }]}>
         {label}
       </AppText>
+      {selected && <Icon name="check" size={size.icon} color={colors.secondaryText} />}
     </Pressable>
   );
 }
@@ -115,6 +119,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.lg,
     paddingHorizontal: spacing.xl,
+  },
+  label: {
+    flex: 1,
   },
   pressed: {
     backgroundColor: colors.surfaceRaised,

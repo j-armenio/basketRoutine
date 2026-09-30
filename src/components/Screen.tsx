@@ -18,6 +18,13 @@ type ScreenProps = {
   /** Before the title (a back, close or minimize button). */
   left?: ReactNode;
   right?: ReactNode;
+  /**
+   * Centers `left`/`right` against the whole title block instead of just its first line: for a
+   * two-line title (with `subtitle`) that also has both, so neither sits level with only the top
+   * line (the tactical board editor's Cancel and Save, beside "Tactical board" plus the exercise
+   * name).
+   */
+  centerHeader?: boolean;
   scroll?: boolean;
   /** Pads the bottom safe area, for screens outside the tabs (which have a tab bar for that). */
   bottomInset?: boolean;
@@ -40,6 +47,7 @@ export function Screen({
   titleVariant = 'display',
   left,
   right,
+  centerHeader = false,
   scroll = true,
   bottomInset = false,
   keyboardAvoiding = false,
@@ -64,18 +72,26 @@ export function Screen({
       edges={bottomInset && !footer ? ['top', 'bottom'] : ['top']}
       style={styles.safeArea}
     >
-      <View style={[styles.header, left !== undefined && styles.headerWithLeft]}>
+      <View
+        style={[
+          styles.header,
+          left !== undefined && styles.headerWithLeft,
+          centerHeader && styles.headerCentered,
+        ]}
+      >
         {left}
-        {/* A one-line title sits level with the 48 dp buttons beside it; a longer one grows down. */}
+        {/* A one-line title sits level with the 48 dp buttons beside it; a longer one grows down,
+            unless `centerHeader` centers the whole row against the title block instead. */}
         <View
           style={[
             styles.titles,
-            (left !== undefined || right !== undefined) && {
-              paddingTop: Math.max(
-                0,
-                (size.minTouchTarget - typography[titleVariant].lineHeight) / 2,
-              ),
-            },
+            (left !== undefined || right !== undefined) &&
+              !centerHeader && {
+                paddingTop: Math.max(
+                  0,
+                  (size.minTouchTarget - typography[titleVariant].lineHeight) / 2,
+                ),
+              },
           ]}
         >
           <AppText variant={titleVariant} accessibilityRole="header">
@@ -120,6 +136,9 @@ const styles = StyleSheet.create({
     paddingTop: spacing.lg,
     paddingBottom: spacing.md,
     paddingHorizontal: spacing.screenPadding + spacing.xs,
+  },
+  headerCentered: {
+    alignItems: 'center',
   },
   // A 48 dp button before the title: its icon lines up with the content's edge.
   headerWithLeft: {

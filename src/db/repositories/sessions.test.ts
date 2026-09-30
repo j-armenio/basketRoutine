@@ -1,5 +1,6 @@
 /** @jest-environment node */
 import { DomainError } from '@/domain/errors';
+import type { TacticalBoard } from '@/domain/tacticalBoard';
 import { count, eq } from 'drizzle-orm';
 import { exercises, sessionExercises, sessionSets, sessions } from '../schema';
 import { seedExercises } from '../seed/seed';
@@ -24,6 +25,7 @@ import {
   reorderSessionExercises,
   startEmptySession,
   startSessionFromWorkout,
+  updateSessionExerciseBoard,
   updateSessionExerciseNote,
   updateSessionSet,
 } from './sessions';
@@ -744,5 +746,100 @@ describe('templates and sessions', () => {
 
     expect(getInProgressSession(db)?.id).toBe(current.id);
     expect(detailOf(db, current.id).exercises).toHaveLength(1);
+  });
+});
+
+describe('tactical boards', () => {
+  const board: TacticalBoard = {
+    version: 1,
+    elements: [
+      { type: 'x', at: [0.2, 0.3] },
+      { type: 'arrow', from: [0.2, 0.3], to: [0.5, 0.1] },
+      {
+        type: 'pen',
+        points: [
+          [0.1, 0.1],
+          [0.3, 0.2],
+          [0.4, 0.5],
+        ],
+      },
+    ],
+  };
+
+  test('starting a workout copies each exercise board, and an added exercise has none', () => {
+    const db = createTestDb();
+    seedExercises(db);
+    const workout = createWorkout(db, createRoutine(db, 'R').id, 'W');
+    addWorkoutExercise(db, workout.id, exerciseId(db, 'free_throws'), {
+      targetMode: 'attempts',
+      targetValues: [10],
+      tacticalBoard: board,
+    });
+    addWorkoutExercise(db, workout.id, exerciseId(db, 'figure_8'), { targetValues: [null] });
+    const session = startSessionFromWorkout(db, workout.id);
+    addSessionExercise(db, session.id, exerciseId(db, 'crossover'));
+
+    expect(detailOf(db, session.id).exercises.map((e) => e.tacticalBoard)).toEqual([
+      board,
+      null,
+      null,
+    ]);
+  });
+
+  test('updateSessionExerciseBoard sets and removes the board, leaving the template alone', () => {
+    const { db, workout } = setup();
+    const before = getWorkoutWithExercises(db, workout.id);
+    const session = startSessionFromWorkout(db, workout.id);
+    const id = detailOf(db, session.id).exercises[0].id;
+
+    const otherBoard: TacticalBoard = { version: 1, elements: [{ type: 'x', at: [0.5, 0.5] }] };
+
+    expect(updateSessionExerciseBoard(db, id, board).tacticalBoard).toEqual(board);
+    expect(detailOf(db, session.id).exercises[0].tacticalBoard).toEqual(board);
+    updateSessionExerciseBoard(db, id, otherBoard);
+    expect(detailOf(db, session.id).exercises[0].tacticalBoard).toEqual(otherBoard);
+    updateSessionExerciseBoard(db, id, null);
+    expect(detailOf(db, session.id).exercises[0].tacticalBoard).toBeNull();
+    expect(getWorkoutWithExercises(db, workout.id)).toEqual(before);
+  });
+
+  test('updateSessionExerciseBoard refuses an empty board, like the app never lets you save one', () => {
+    const { db, workout } = setup();
+    const session = startSessionFromWorkout(db, workout.id);
+    const id = detailOf(db, session.id).exercises[0].id;
+
+    expect(reasonOf(() => updateSessionExerciseBoard(db, id, { version: 1, elements: [] }))).toBe(
+      'invalid_board',
+    );
+  });
+
+  test('updateSessionExerciseBoard refuses an invalid board, a finished session, an unknown id', () => {
+    const { db, workout } = setup();
+    const session = startSessionFromWorkout(db, workout.id);
+    const id = detailOf(db, session.id).exercises[0].id;
+    const offCourt = { version: 1, elements: [{ type: 'x', at: [2, 0] }] } as TacticalBoard;
+
+    expect(reasonOf(() => updateSessionExerciseBoard(db, id, offCourt))).toBe('invalid_board');
+    expect(detailOf(db, session.id).exercises[0].tacticalBoard).toBeNull();
+    expect(reasonOf(() => updateSessionExerciseBoard(db, 999, board))).toBe('not_found');
+    finishSession(db, session.id);
+    expect(reasonOf(() => updateSessionExerciseBoard(db, id, board))).toBe(
+      'session_not_in_progress',
+    );
+  });
+
+  test('overwriteWorkoutFromSession carries the boards back to the template', () => {
+    const { db, workout } = setup();
+    const session = startSessionFromWorkout(db, workout.id);
+    updateSessionExerciseBoard(db, detailOf(db, session.id).exercises[1].id, board);
+    finishSession(db, session.id);
+
+    overwriteWorkoutFromSession(db, session.id);
+
+    expect(getWorkoutWithExercises(db, workout.id)!.exercises.map((e) => e.tacticalBoard)).toEqual([
+      null,
+      board,
+      null,
+    ]);
   });
 });

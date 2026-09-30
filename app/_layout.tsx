@@ -52,6 +52,12 @@ export default function RootLayout() {
           <Stack.Screen name="active-workout" options={{ animation: 'slide_from_bottom' }} />
           <Stack.Screen name="edit-workout" options={{ animation: 'slide_from_bottom' }} />
           <Stack.Screen name="edit-exercise" options={{ animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="edit-profile" options={{ animation: 'slide_from_bottom' }} />
+          {/* Drawing on the board must not start the back swipe. */}
+          <Stack.Screen
+            name="tactical-board"
+            options={{ animation: 'slide_from_bottom', gestureEnabled: false }}
+          />
           <Stack.Screen name="add-exercise" options={{ presentation: 'modal' }} />
           <Stack.Screen name="add-to-routine" options={{ presentation: 'modal' }} />
         </Stack>

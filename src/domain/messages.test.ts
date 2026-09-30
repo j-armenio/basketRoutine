@@ -13,6 +13,7 @@ test('every reason has a message', () => {
     'target_mode_not_allowed',
     'value_not_allowed',
     'invalid_media',
+    'invalid_board',
     'not_found',
     'empty_name',
     'exercise_read_only',

@@ -16,6 +16,8 @@ type ExerciseListProps = {
   empty?: { title: string; message?: string };
   /** Room at the bottom, so the last row can scroll out from under a FAB. */
   bottomClearance?: number;
+  /** A category's header over its rows (default). Off for a list of one category under its title. */
+  sectionHeaders?: boolean;
 };
 
 /**
@@ -28,6 +30,7 @@ export function ExerciseList({
   rightIcon,
   empty = { title: 'No exercises found' },
   bottomClearance = 0,
+  sectionHeaders = true,
 }: ExerciseListProps) {
   return (
     <SectionList
@@ -38,16 +41,7 @@ export function ExerciseList({
       keyboardShouldPersistTaps="handled"
       stickySectionHeadersEnabled={false}
       ItemSeparatorComponent={Separator}
-      renderSectionHeader={({ section }) => (
-        <AppText
-          variant="sectionHeader"
-          tone="secondary"
-          accessibilityRole="header"
-          style={styles.sectionHeader}
-        >
-          {section.title}
-        </AppText>
-      )}
+      renderSectionHeader={sectionHeaders ? SectionHeader : undefined}
       renderItem={({ item }) => (
         <ExerciseRow exercise={item} rightIcon={rightIcon} onPress={() => onPressExercise(item)} />
       )}
@@ -57,6 +51,17 @@ export function ExerciseList({
 }
 
 const Separator = () => <View style={styles.separator} />;
+
+const SectionHeader = ({ section }: { section: { title: string } }) => (
+  <AppText
+    variant="sectionHeader"
+    tone="secondary"
+    accessibilityRole="header"
+    style={styles.sectionHeader}
+  >
+    {section.title}
+  </AppText>
+);
 
 const styles = StyleSheet.create({
   list: {

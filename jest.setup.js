@@ -101,3 +101,17 @@ jest.mock('expo-haptics', () => {
     selectionAsync: jest.fn(async () => {}),
   };
 });
+
+// The profile's key-value store (its own SQLite file on the phone) as an in-memory map, emptied
+// through `__clear` between tests.
+jest.mock('expo-sqlite/kv-store', () => {
+  const items = new Map();
+  const Storage = {
+    getItemSync: (key) => items.get(key) ?? null,
+    setItemSync: (key, value) => {
+      items.set(key, value);
+    },
+    removeItemSync: (key) => items.delete(key),
+  };
+  return { __esModule: true, default: Storage, Storage, __clear: () => items.clear() };
+});

@@ -8,6 +8,7 @@ const MESSAGES: Record<DomainErrorReason, string> = {
   target_mode_not_allowed: "This exercise doesn't have a target mode.",
   value_not_allowed: "This exercise doesn't take values.",
   invalid_media: "That file can't be used as media.",
+  invalid_board: "This tactical board can't be saved.",
   not_found: 'That item no longer exists.',
   empty_name: "The name can't be empty.",
   exercise_read_only: "Predefined exercises can't be edited.",

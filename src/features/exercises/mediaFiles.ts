@@ -2,18 +2,22 @@ import { DomainError } from '@/domain/errors';
 import type { PickedMedia } from '@/domain/media';
 import { Directory, File, Paths } from 'expo-file-system';
 
-// A custom exercise's media lives in the app's own storage, so it works offline and survives the
-// original being deleted from the gallery. Uninstalling the app removes it, like the DB.
+// A custom exercise's media (and the profile photo) lives in the app's own storage, so it works
+// offline and survives the original being deleted from the gallery. Uninstalling the app removes
+// it, like the DB.
 
-const mediaDirectory = () => new Directory(Paths.document, 'exercise-media');
+/** The folders under the app's documents: exercise media, and the profile photo. */
+export type MediaFolder = 'exercise-media' | 'profile-photo';
+
+const mediaDirectory = (folder: MediaFolder) => new Directory(Paths.document, folder);
 
 /**
- * Copies a picked file into the app's media folder under a new name and returns its URI. A failed
- * copy becomes `media_not_saved`, so the action reports it like any rule.
+ * Copies a picked file into a media folder under a new name and returns its URI. A failed copy
+ * becomes `media_not_saved`, so the action reports it like any rule.
  */
-export function storeMedia(media: PickedMedia): string {
+export function storeMedia(media: PickedMedia, folder: MediaFolder = 'exercise-media'): string {
   try {
-    const directory = mediaDirectory();
+    const directory = mediaDirectory(folder);
     directory.create({ idempotent: true, intermediates: true });
     const name = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${media.extension}`;
     const target = new File(directory, name);
@@ -24,11 +28,14 @@ export function storeMedia(media: PickedMedia): string {
   }
 }
 
-/** Deletes a stored media file. Only inside the media folder; a failure leaves a harmless file. */
-export function deleteMedia(uri: string | null | undefined): void {
+/** Deletes a stored media file. Only inside its media folder; a failure leaves a harmless file. */
+export function deleteMedia(
+  uri: string | null | undefined,
+  folder: MediaFolder = 'exercise-media',
+): void {
   if (!uri) return;
   try {
-    if (!uri.startsWith(mediaDirectory().uri)) return;
+    if (!uri.startsWith(mediaDirectory(folder).uri)) return;
     const file = new File(uri);
     if (file.exists) file.delete();
   } catch {

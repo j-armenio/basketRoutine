@@ -9,6 +9,7 @@ import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import { useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { deleteRoutine, moveWorkout } from './actions';
 import { WorkoutCard } from './WorkoutCard';
 
@@ -21,6 +22,11 @@ type RoutineSectionProps = {
   onNewWorkout: () => void;
   onEditWorkout: (workoutId: number) => void;
   onStartWorkout: (workoutId: number) => void;
+  /** Holding the name to drag the section and reorder it: on activation, on every following move
+   * (the finger's translation from there), and on release. See `DraggableRoutineList`. */
+  onDragStart: () => void;
+  onDragMove: (translationY: number) => void;
+  onDragEnd: () => void;
 };
 
 /**
@@ -36,10 +42,22 @@ export function RoutineSection({
   onNewWorkout,
   onEditWorkout,
   onStartWorkout,
+  onDragStart,
+  onDragMove,
+  onDragEnd,
 }: RoutineSectionProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const workoutIds = routine.workouts.map((workout) => workout.id);
   const n = workoutIds.length;
+
+  // Holding the name starts a drag (the menu button beside it stays a plain tap); `runOnJS`
+  // because the move only ever touches plain JS state.
+  const drag = Gesture.Pan()
+    .activateAfterLongPress(400)
+    .runOnJS(true)
+    .onStart(onDragStart)
+    .onUpdate((event) => onDragMove(event.translationY))
+    .onFinalize(onDragEnd);
 
   const confirmDelete = () =>
     Alert.alert(
@@ -56,14 +74,13 @@ export function RoutineSection({
   return (
     <Card style={styles.section}>
       <View style={styles.header}>
-        <AppText
-          variant="sectionTitle"
-          accessibilityRole="header"
-          numberOfLines={1}
-          style={styles.name}
-        >
-          {routine.name}
-        </AppText>
+        <GestureDetector gesture={drag}>
+          <View style={styles.name}>
+            <AppText variant="sectionTitle" accessibilityRole="header" numberOfLines={1}>
+              {routine.name}
+            </AppText>
+          </View>
+        </GestureDetector>
         <IconButton
           icon="more_vert"
           color={colors.iconMuted}

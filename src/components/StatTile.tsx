@@ -8,16 +8,28 @@ type StatTileProps = {
   label: string;
   value: string;
   tone?: TextTone;
+  /** The value in `statMedium` rather than `headline` (the Profile's stats). */
+  large?: boolean;
+  /** On the value. */
+  testID?: string;
 };
 
 /** A labeled number inside a card (BEST FG%, SESSIONS…). Tiles in a row share its width. */
-export function StatTile({ label, value, tone = 'default' }: StatTileProps) {
+export function StatTile({ label, value, tone = 'default', large = false, testID }: StatTileProps) {
   return (
     <View style={styles.tile}>
       <AppText variant="label" tone="secondary">
         {label}
       </AppText>
-      <AppText variant="headline" tone={tone} style={tabularNums}>
+      <AppText
+        testID={testID}
+        variant={large ? 'statMedium' : 'headline'}
+        // A long value (1234 / 2890) shrinks to fit rather than wrapping.
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        tone={tone}
+        style={tabularNums}
+      >
         {value}
       </AppText>
     </View>

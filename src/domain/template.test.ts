@@ -4,10 +4,16 @@ import {
   structureFromTemplate,
   type TemplateStructure,
 } from './template';
+import type { TacticalBoard } from './tacticalBoard';
 
 const base: TemplateStructure = [
-  { exerciseId: 1, targetMode: 'attempts', targetValues: [10, 10] },
-  { exerciseId: 2, targetMode: null, targetValues: [null] },
+  { exerciseId: 1, targetMode: 'attempts', targetValues: [10, 10], tacticalBoard: null },
+  {
+    exerciseId: 2,
+    targetMode: null,
+    targetValues: [null],
+    tacticalBoard: { version: 1, elements: [{ type: 'x', at: [0.5, 0.5] }] },
+  },
 ];
 const copy = (): TemplateStructure => structuredClone(base);
 
@@ -46,18 +52,43 @@ describe('sameStructure', () => {
     exercise[0].exerciseId = 3;
     expect(sameStructure(base, exercise)).toBe(false);
   });
+
+  test('an added, changed or removed tactical board differs', () => {
+    const added = copy();
+    added[0].tacticalBoard = { version: 1, elements: [] };
+    expect(sameStructure(base, added)).toBe(false);
+
+    const changed = copy();
+    changed[1].tacticalBoard = { version: 1, elements: [{ type: 'x', at: [0.5, 0.6] }] };
+    expect(sameStructure(base, changed)).toBe(false);
+
+    const removed = copy();
+    removed[1].tacticalBoard = null;
+    expect(sameStructure(base, removed)).toBe(false);
+  });
 });
 
 describe('structure builders', () => {
+  const board: TacticalBoard = { version: 1, elements: [] };
   const exercises = [
-    { exerciseId: 1, targetMode: 'attempts' as const, sets: [{ targetValue: 10 }] },
-    { exerciseId: 2, targetMode: null, sets: [{ targetValue: null }, { targetValue: null }] },
+    {
+      exerciseId: 1,
+      targetMode: 'attempts' as const,
+      sets: [{ targetValue: 10 }],
+      tacticalBoard: board,
+    },
+    {
+      exerciseId: 2,
+      targetMode: null,
+      sets: [{ targetValue: null }, { targetValue: null }],
+      tacticalBoard: null,
+    },
   ];
 
-  test('read the exercises in order with their targets', () => {
+  test('read the exercises in order with their targets and boards', () => {
     const expected = [
-      { exerciseId: 1, targetMode: 'attempts', targetValues: [10] },
-      { exerciseId: 2, targetMode: null, targetValues: [null, null] },
+      { exerciseId: 1, targetMode: 'attempts', targetValues: [10], tacticalBoard: board },
+      { exerciseId: 2, targetMode: null, targetValues: [null, null], tacticalBoard: null },
     ];
     expect(structureFromTemplate({ exercises })).toEqual(expected);
     expect(structureFromSession({ exercises })).toEqual(expected);
@@ -71,6 +102,7 @@ describe('structure builders', () => {
           targetMode: 'attempts' as const,
           note: 'felt good',
           sets: [{ targetValue: 10, loggedValue: 7, completed: true }],
+          tacticalBoard: null,
         },
       ],
     };
@@ -80,6 +112,7 @@ describe('structure builders', () => {
           exerciseId: 1,
           targetMode: 'attempts' as const,
           sets: [{ targetValue: 10 }],
+          tacticalBoard: null,
         },
       ],
     };

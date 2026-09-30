@@ -39,3 +39,16 @@ const readablePairs: [Token, Token][] = [
 test.each(readablePairs)('%s on %s has at least 4.5:1 contrast', (foreground, background) => {
   expect(contrast(colors[foreground], colors[background])).toBeGreaterThanOrEqual(4.5);
 });
+
+// The tactical board's marks and lines are graphics (3:1) on the court's floor and paint.
+const boardPairs: [Token, Token][] = (['court', 'courtPaint', 'courtArc'] as const).flatMap(
+  (floor): [Token, Token][] => [
+    ['textPrimary', floor],
+    ['primary', floor],
+    ['courtLine', floor],
+  ],
+);
+
+test.each(boardPairs)('%s on %s has at least 3:1 contrast', (foreground, background) => {
+  expect(contrast(colors[foreground], colors[background])).toBeGreaterThanOrEqual(3);
+});

@@ -1,5 +1,6 @@
 import { relations, sql } from 'drizzle-orm';
 import { check, index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import type { TacticalBoard } from '@/domain/tacticalBoard';
 import { CATEGORIES, SESSION_STATUSES, TARGET_MODES, TRACKING_TYPES } from '@/domain/types';
 
 const inList = (values: readonly string[]) => sql.raw(values.map((v) => `'${v}'`).join(', '));
@@ -10,6 +11,9 @@ const createdAt = () =>
   timestamp('created_at')
     .notNull()
     .$defaultFn(() => new Date());
+
+/** An exercise's tactical board, as JSON (see `src/domain/tacticalBoard.ts`); null: none. */
+const tacticalBoard = () => text('tactical_board', { mode: 'json' }).$type<TacticalBoard>();
 
 const updatedAt = () =>
   timestamp('updated_at')
@@ -75,6 +79,7 @@ export const workoutExercises = sqliteTable(
       .references(() => exercises.id),
     position: integer('position').notNull(),
     targetMode: text('target_mode', { enum: TARGET_MODES }),
+    tacticalBoard: tacticalBoard(),
   },
   (t) => [
     index('workout_exercises_workout_id_idx').on(t.workoutId),
@@ -132,6 +137,7 @@ export const sessionExercises = sqliteTable(
     trackingType: text('tracking_type', { enum: TRACKING_TYPES }).notNull(),
     targetMode: text('target_mode', { enum: TARGET_MODES }),
     note: text('note').notNull().default(''),
+    tacticalBoard: tacticalBoard(),
   },
   (t) => [
     index('session_exercises_session_id_idx').on(t.sessionId),

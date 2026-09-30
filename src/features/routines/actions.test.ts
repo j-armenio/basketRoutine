@@ -149,6 +149,26 @@ describe('templateUpdateCandidate', () => {
     expect(workoutActions.templateUpdateCandidate(session.id)).toMatchObject({ id: workout.id });
   });
 
+  test('is the workout when only the tactical board changed, and applying it copies the board', () => {
+    const { workout } = buildWorkout();
+    const session = unwrap(workoutActions.startWorkoutFromTemplate(workout.id));
+    const board = {
+      version: 1 as const,
+      elements: [{ type: 'x' as const, at: [0.5, 0.3] as [number, number] }],
+    };
+    const before = notifications;
+    unwrap(workoutActions.setBoard(getSessionDetail(db, session.id)!.exercises[1].id, board));
+    expect(notifications).toBe(before + 1);
+    finish(session.id);
+
+    expect(workoutActions.templateUpdateCandidate(session.id)).toMatchObject({ id: workout.id });
+    unwrap(workoutActions.updateTemplateFromSession(session.id));
+    expect(getWorkoutWithExercises(db, workout.id)!.exercises.map((e) => e.tacticalBoard)).toEqual([
+      null,
+      board,
+    ]);
+  });
+
   test('is nothing when the workout was deleted meanwhile', () => {
     const { workout } = buildWorkout();
     const session = unwrap(workoutActions.startWorkoutFromTemplate(workout.id));

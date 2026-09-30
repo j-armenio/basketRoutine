@@ -53,11 +53,13 @@ This is a high-level plan. Each phase gets its own detailed plan before developm
    - The user logs each set right after performing it.
 3. **Finish** → summary (total makes, attempts, overall FG% for shooting exercises; completed count for check exercises) → saved to History. Option to **overwrite** the template with the session's structure.
 4. **Exercises tab** → catalog by category, search, exercise detail (description + media), create custom exercise.
-5. **History tab** → past sessions list and read-only detail.
+5. **Profile tab** → the user's stats, the latest sessions and the full History list, with a read-only detail.
 
 ## 4. Milestones
 
 Phases are ordered so a usable prototype (empty workout logged on the court) exists early. Routines and workout templates come right after it, since starting a planned workout is the app's main flow; history and catalog management follow.
+
+A refinement phase after the redesign lets the developer adjust the look and add features found while using the app; testing and release come last, on the final screens.
 
 ### Phase 0 — Project Setup
 - New Expo + TypeScript project, Android only, dark UI style.
@@ -114,7 +116,12 @@ Phases are ordered so a usable prototype (empty workout logged on the court) exi
 - The final app icon and splash, checked on an APK.
 - **Done when:** every screen follows the new look on the phone.
 
-### Phase 9 — Testing & Release
+### Phase 9 — Refinement
+- Visual changes and new features chosen by the developer after using the redesigned app, before v1.0 is frozen.
+- The scope is an open list kept in the phase's detailed plan: items come from the developer's own ideas and from `docs/backlog.md`, each one is agreed before it's built, and the list can grow during the phase. Whatever isn't picked stays in the backlog.
+- **Done when:** every item on the list works on the phone and CI is green.
+
+### Phase 10 — Testing & Release
 - E2E tests of the main flow (create routine → start → log → finish → history), run on the phone against a separate test install, so the real data is never touched.
 - Performance check on the target phone with a long session and a long history.
 - Release APK (v1.0) installed over the current one, keeping the data.
@@ -126,4 +133,4 @@ Phases are ordered so a usable prototype (empty workout logged on the court) exi
 - **No internet in the gym** → media is stored on the phone (or ships with the app), never loaded from the web; a placeholder when an exercise has none.
 - **Set logging awkward on the court** → validated early with the Phase 3 prototype (on the phone before templates are built, and on the court while they are).
 - **Broken history after deletes** → session snapshots + archiving instead of hard deletes.
-- **Scope creep** → nothing beyond the planned phases until v1.0 is released (Phase 9).
+- **Scope creep** → nothing beyond the planned phases until v1.0 is released (Phase 10); new ideas go to Phase 9's list or to the backlog.

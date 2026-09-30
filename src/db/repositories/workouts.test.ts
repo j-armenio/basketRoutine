@@ -1,5 +1,6 @@
 /** @jest-environment node */
 import { DomainError } from '@/domain/errors';
+import type { TacticalBoard } from '@/domain/tacticalBoard';
 import { count, eq } from 'drizzle-orm';
 import { exercises, templateSets, workouts } from '../schema';
 import { seedExercises } from '../seed/seed';
@@ -290,6 +291,70 @@ describe('saveWorkout', () => {
     );
 
     expect(reason).toBe('exercise_archived');
+  });
+
+  test('keeps each exercise tactical board, and saving again replaces or removes it', () => {
+    const { db, routine, workout } = setup();
+    const board: TacticalBoard = {
+      version: 1,
+      elements: [
+        {
+          type: 'pen',
+          points: [
+            [0.1, 0.2],
+            [0.4, 0.4],
+          ],
+        },
+      ],
+    };
+    const save = (exercises: Parameters<typeof saveWorkout>[1]['exercises']) =>
+      saveWorkout(db, { workoutId: workout.id, routineId: routine.id, name: 'W', exercises });
+    const boards = () =>
+      getWorkoutWithExercises(db, workout.id)!.exercises.map((e) => e.tacticalBoard);
+
+    const otherBoard: TacticalBoard = { version: 1, elements: [{ type: 'x', at: [0.5, 0.5] }] };
+
+    save([{ ...freeThrows(db), tacticalBoard: board }, figure8(db)]);
+    expect(boards()).toEqual([board, null]);
+
+    save([figure8(db), { ...freeThrows(db), tacticalBoard: otherBoard }]);
+    expect(boards()).toEqual([null, otherBoard]);
+
+    save([figure8(db), { ...freeThrows(db), tacticalBoard: null }]);
+    expect(boards()).toEqual([null, null]);
+  });
+
+  test('an empty tactical board is refused, like the app never lets you save one', () => {
+    const { db, routine, workout } = setup();
+
+    const reason = reasonOf(() =>
+      saveWorkout(db, {
+        workoutId: workout.id,
+        routineId: routine.id,
+        name: 'W',
+        exercises: [{ ...freeThrows(db), tacticalBoard: { version: 1, elements: [] } }],
+      }),
+    );
+
+    expect(reason).toBe('invalid_board');
+  });
+
+  test('an invalid tactical board is refused and leaves the template as it was', () => {
+    const { db, routine, workout } = setup();
+    const before = getWorkoutWithExercises(db, workout.id);
+    const bad = { version: 1, elements: [{ type: 'pen', points: [[0.1, 0.1]] }] } as TacticalBoard;
+
+    const reason = reasonOf(() =>
+      saveWorkout(db, {
+        workoutId: workout.id,
+        routineId: routine.id,
+        name: 'Changed',
+        exercises: [{ ...freeThrows(db), tacticalBoard: bad }],
+      }),
+    );
+
+    expect(reason).toBe('invalid_board');
+    expect(getWorkoutWithExercises(db, workout.id)).toEqual(before);
   });
 });
 

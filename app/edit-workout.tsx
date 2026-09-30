@@ -13,8 +13,8 @@ import {
   useDraft,
   useDraftDirty,
 } from '@/features/routines/draftStore';
+import { DraggableExerciseList } from '@/features/routines/DraggableExerciseList';
 import { loadDraft, withRequestedExercise } from '@/features/routines/loadDraft';
-import { TemplateExerciseCard } from '@/features/routines/TemplateExerciseCard';
 import { rename, toSaveInput } from '@/features/routines/templateDraft';
 import { leaveScreen } from '@/features/workout/navigation';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
@@ -140,14 +140,7 @@ export default function EditWorkoutScreen() {
           message="Pick a drill from the catalog and set the target of every set."
         />
       ) : (
-        draft.exercises.map((exercise, index) => (
-          <TemplateExerciseCard
-            key={exercise.key}
-            exercise={exercise}
-            index={index}
-            count={draft.exercises.length}
-          />
-        ))
+        <DraggableExerciseList exercises={draft.exercises} />
       )}
       <Button
         variant="secondary"

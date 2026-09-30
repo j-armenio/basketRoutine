@@ -1,5 +1,6 @@
 import { useDatabaseSetup } from '@/db/useDatabaseSetup';
-import { screen, userEvent } from '@testing-library/react-native';
+import { size } from '@/theme/spacing';
+import { fireEvent, screen, userEvent, within } from '@testing-library/react-native';
 import { renderRouter } from 'expo-router/testing-library';
 import { expectAccessibleControls } from '@/test-utils/a11y';
 
@@ -49,13 +50,48 @@ test('starts on Workout and switches between the three tabs', async () => {
   expect(screen.getByText('38 exercises')).toBeOnTheScreen();
   expectAccessibleControls();
 
-  await user.press(screen.getByRole('tab', { name: 'History' }));
-  expect(app.getPathname()).toBe('/history');
+  await user.press(screen.getByRole('tab', { name: 'Profile' }));
+  expect(app.getPathname()).toBe('/profile');
   expect(screen.getByText('No workouts yet')).toBeOnTheScreen();
   expectAccessibleControls();
 
   await user.press(screen.getByRole('tab', { name: 'Workout' }));
   expect(app.getPathname()).toBe('/');
+});
+
+// The native pager can't be dragged in Jest: a test fires the page it would settle on, as the
+// drag ends on the phone. The tab view forwards no testID, so the pager is found by its handler.
+const settlePagerOn = async (position: number) => {
+  const [pager] = screen.container.queryAll(
+    (node) => typeof node.props.onPageSelected === 'function',
+  );
+  await fireEvent(pager, 'pageSelected', { nativeEvent: { position } });
+};
+
+test('dragging the pages sideways switches tabs', async () => {
+  mockedSetup.mockReturnValue({ ready: true, error: null });
+  const app = renderApp();
+  await app;
+
+  // the green pill sits in the focused tab only, and moves with it
+  const pillIn = (name: string) =>
+    within(screen.getByRole('tab', { name })).queryByTestId('tab-pill');
+  expect(pillIn('Workout')).toBeOnTheScreen();
+  expect(pillIn('Exercises')).toBeNull();
+
+  await settlePagerOn(1);
+  expect(app.getPathname()).toBe('/exercises');
+  expect(screen.getByRole('tab', { name: 'Exercises' })).toBeSelected();
+  expect(pillIn('Exercises')).toHaveStyle({ borderRadius: size.navPillHeight / 2 });
+  expect(pillIn('Workout')).toBeNull();
+
+  await settlePagerOn(2);
+  expect(app.getPathname()).toBe('/profile');
+  expect(screen.getByRole('tab', { name: 'Profile' })).toBeSelected();
+
+  await settlePagerOn(0);
+  expect(app.getPathname()).toBe('/');
+  expect(screen.getByRole('tab', { name: 'Workout' })).toBeSelected();
 });
 
 test('shows the database error and no tab bar', async () => {

@@ -21,6 +21,11 @@ to come, and ideas for after v1. Each item says where it came from.
   exercise in `assets/exercises/<seedKey>.<ext>` (image, GIF, or video up to 30 s, kept small since
   it ships in the APK) plus its line in `src/features/exercises/seedMedia.ts`; `npm test` names a
   missing line. Until then they show the placeholder.
+- **Images for the 6 category cards** (Phase 9), supplied by the developer. One image per card of
+  the Exercises tab in `assets/categories/<key>.jpg` (`finishing`, `ball_handling`, `dribbling`,
+  `shooting`, `footwork`, `custom`; jpg, png or webp, about 800 px wide) plus its line in
+  `src/features/exercises/categoryImages.ts`; `npm test` names a missing line. Until then the cards
+  show the placeholder.
 
 ## Post-v1 (optional)
 

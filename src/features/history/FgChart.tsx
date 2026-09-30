@@ -1,11 +1,11 @@
 import { AppText } from '@/components/AppText';
 import { formatFgPct } from '@/domain/format';
 import { colors } from '@/theme/colors';
-import { border, radius, size, spacing } from '@/theme/spacing';
+import { border, size, spacing } from '@/theme/spacing';
 import { typography } from '@/theme/typography';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { chartDateLabels, fgEvolutionLabel, type FgPoint } from './historyList';
+import { chartDateLabels, fgEvolutionLabel, spreadLabels, type FgPoint } from './historyList';
 
 // The geometry of the History mockup's chart, in dp: the y-axis labels on the left, the plot
 // between the 100% and 0% lines, the date labels under it.
@@ -32,10 +32,12 @@ const yOf = (ratio: number) => PLOT_TOP + (1 - ratio) * (PLOT_BOTTOM - PLOT_TOP)
 /**
  * A line chart of FG% per session, drawn with plain views (no chart library): a 0 / 50 / 100%
  * grid, a segment between consecutive points, a dot per point, the latest one larger with its
- * value above it, and the dates under the points. One `image` element for screen readers, whose
- * label lists every point.
+ * value above it, and the dates under the points. With many points, the dots are left out when
+ * they would touch (the latest stays) and only the dates that fit side by side are written. One
+ * `image` element for screen readers (see `fgEvolutionLabel`; `all`: the chart shows every
+ * session).
  */
-export function FgChart({ points }: { points: FgPoint[] }) {
+export function FgChart({ points, all = false }: { points: FgPoint[]; all?: boolean }) {
   const [width, setWidth] = useState(0);
   const left = AXIS_WIDTH + INSET_LEFT;
   const right = width - INSET_RIGHT;
@@ -43,12 +45,18 @@ export function FgChart({ points }: { points: FgPoint[] }) {
   const xOf = (index: number) => (points.length > 1 ? left + index * step : (left + right) / 2);
   const coords = points.map((point, index) => ({ x: xOf(index), y: yOf(point.fgPct) }));
   const last = coords.at(-1);
+  const dots = step >= 2 * DOT ? coords : coords.slice(-1);
+  const dateLabels = spreadLabels(
+    chartDateLabels(points),
+    ({ first, last: lastIndex }) => (xOf(first) + xOf(lastIndex)) / 2,
+    LABEL_BOX,
+  );
 
   return (
     <View
       accessible
       accessibilityRole="image"
-      accessibilityLabel={fgEvolutionLabel(points)}
+      accessibilityLabel={fgEvolutionLabel(points, all)}
       style={styles.chart}
       onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
     >
@@ -86,14 +94,20 @@ export function FgChart({ points }: { points: FgPoint[] }) {
               />
             );
           })}
-          {coords.map(({ x, y }, index) => {
-            const dot = index === coords.length - 1 ? LAST_DOT : DOT;
+          {dots.map(({ x, y }, index) => {
+            const dot = index === dots.length - 1 ? LAST_DOT : DOT;
             return (
               <View
-                key={points[index].id}
+                key={points[points.length - dots.length + index].id}
                 style={[
                   styles.dot,
-                  { left: x - dot / 2, top: y - dot / 2, width: dot, height: dot },
+                  {
+                    left: x - dot / 2,
+                    top: y - dot / 2,
+                    width: dot,
+                    height: dot,
+                    borderRadius: dot / 2,
+                  },
                 ]}
               />
             );
@@ -110,7 +124,7 @@ export function FgChart({ points }: { points: FgPoint[] }) {
               {formatFgPct(points[points.length - 1].fgPct)}
             </AppText>
           )}
-          {chartDateLabels(points).map(({ label, first, last: lastIndex }) => (
+          {dateLabels.map(({ label, first, last: lastIndex }) => (
             <AppText
               key={label}
               variant="micro"
@@ -149,12 +163,11 @@ const styles = StyleSheet.create({
   segment: {
     position: 'absolute',
     height: LINE_WIDTH,
-    borderRadius: radius.pill,
+    borderRadius: LINE_WIDTH / 2,
     backgroundColor: colors.primary,
   },
   dot: {
     position: 'absolute',
-    borderRadius: radius.pill,
     borderWidth: DOT_BORDER,
     borderColor: colors.surface,
     backgroundColor: colors.primary,

@@ -1,38 +1,41 @@
-import { ChipRow } from '@/components/ChipRow';
-import { Fab, FAB_CLEARANCE } from '@/components/Fab';
+import { IconButton } from '@/components/IconButton';
 import { Screen } from '@/components/Screen';
 import { TextField } from '@/components/TextField';
-import { CATEGORIES, CATEGORY_LABELS, type Category } from '@/domain/types';
+import { exerciseCount } from '@/features/exercises/catalogList';
+import { CategoryGrid } from '@/features/exercises/CategoryCard';
 import { ExerciseList } from '@/features/exercises/ExerciseList';
-import { useExerciseCount, useExercises } from '@/features/exercises/hooks';
+import { useCategoryCards, useExerciseCount, useExercises } from '@/features/exercises/hooks';
+import { spacing } from '@/theme/spacing';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
+import { ScrollView, StyleSheet } from 'react-native';
 
-/** One chip at a time: everything, only the user's own exercises, or one category. */
-type CatalogFilter = Category | 'all' | 'custom';
-
-const FILTER_OPTIONS: { value: CatalogFilter; label: string }[] = [
-  { value: 'all', label: 'All' },
-  { value: 'custom', label: 'Custom' },
-  ...CATEGORIES.map((category) => ({ value: category, label: CATEGORY_LABELS[category] })),
-];
-
+/**
+ * The catalog: a card per category (and one for the user's own exercises), each opening its
+ * list. Typing in the search swaps the cards for the matching exercises of every category.
+ */
 export default function ExercisesScreen() {
   const router = useRouter();
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState<CatalogFilter>('all');
-  const sections = useExercises({
-    search,
-    category: filter === 'all' || filter === 'custom' ? undefined : filter,
-    customOnly: filter === 'custom',
-  });
+  const searching = search.trim() !== '';
+  const results = useExercises({ search });
+  const cards = useCategoryCards();
   // The whole catalog, so the subtitle doesn't change while searching.
   const count = useExerciseCount();
 
   return (
     <Screen
       title="Exercises"
-      subtitle={`${count} ${count === 1 ? 'exercise' : 'exercises'}`}
+      subtitle={exerciseCount(count)}
+      // Rarely needed, so a plain button up here rather than a FAB.
+      right={
+        <IconButton
+          icon="add"
+          variant="outlined"
+          accessibilityLabel="New exercise"
+          onPress={() => router.push('/edit-exercise')}
+        />
+      }
       scroll={false}
     >
       <TextField
@@ -44,23 +47,33 @@ export default function ExercisesScreen() {
         autoCorrect={false}
         returnKeyType="search"
       />
-      <ChipRow options={FILTER_OPTIONS} value={filter} onChange={setFilter} />
-      <ExerciseList
-        sections={sections}
-        empty={
-          filter === 'custom' && search.trim() === ''
-            ? { title: 'No custom exercises yet', message: 'Create one with New Exercise.' }
-            : undefined
-        }
-        bottomClearance={FAB_CLEARANCE}
-        onPressExercise={(exercise) => router.push(`/exercise/${exercise.id}`)}
-      />
-      <Fab
-        label="New Exercise"
-        icon="add"
-        accessibilityLabel="New exercise"
-        onPress={() => router.push('/edit-exercise')}
-      />
+      {searching ? (
+        <ExerciseList
+          sections={results}
+          onPressExercise={(exercise) => router.push(`/exercise/${exercise.id}`)}
+        />
+      ) : (
+        <ScrollView
+          style={styles.cards}
+          contentContainerStyle={styles.cardsContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          <CategoryGrid
+            cards={cards}
+            onPressCard={(card) => router.push(`/category/${card.key}`)}
+          />
+        </ScrollView>
+      )}
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  cards: {
+    flex: 1,
+  },
+  cardsContent: {
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.lg,
+  },
+});

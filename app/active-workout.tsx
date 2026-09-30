@@ -31,7 +31,7 @@ function offerTemplateUpdate(sessionId: number) {
   if (!workout) return;
   Alert.alert(
     `Update "${workout.name}"?`,
-    "Save this workout's exercises and sets to the template. Logged values and notes aren't copied.",
+    "Save this workout's exercises, sets and tactical boards to the template. Logged values and notes aren't copied.",
     [
       { text: 'Keep template', style: 'cancel' },
       {

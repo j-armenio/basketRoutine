@@ -23,8 +23,17 @@ import { useDatabaseSetup } from '@/db/useDatabaseSetup';
 import type { Db } from '@/db/types';
 import { notifyDataChanged } from '@/features/dataStore';
 import { colors } from '@/theme/colors';
-import { act, cleanup, fireEvent, screen, userEvent, within } from '@testing-library/react-native';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  isHiddenFromAccessibility,
+  screen,
+  userEvent,
+  within,
+} from '@testing-library/react-native';
 import { count, eq } from 'drizzle-orm';
+import { launchImageLibraryAsync } from 'expo-image-picker';
 import { renderRouter } from 'expo-router/testing-library';
 import { expectAccessibleControls } from '@/test-utils/a11y';
 import { Alert } from 'react-native';
@@ -46,6 +55,10 @@ jest.setTimeout(30_000);
 
 const { db } = jest.requireMock('@/db/client') as { db: Db };
 
+// The app's files and the profile's key-value store, as the mocks in jest.setup.js keep them.
+const files = (jest.requireMock('expo-file-system') as { __files: Set<string> }).__files;
+const clearProfile = (jest.requireMock('expo-sqlite/kv-store') as { __clear: () => void }).__clear;
+
 const setupUser = () => userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
 
 let alertSpy: jest.SpyInstance;
@@ -61,6 +74,8 @@ afterEach(async () => {
   db.delete(sessions).run(); // exercises and sets cascade
   db.delete(workouts).run(); // exercises and template sets cascade
   db.delete(routines).run();
+  files.clear();
+  clearProfile();
   notifyDataChanged();
 });
 
@@ -175,20 +190,35 @@ function seedHistory() {
   return { template, morning, layups, footwork };
 }
 
-const historyTab = () => screen.getByRole('tab', { name: 'History' });
+/** `count` days of free throws from Sep 1, "Day 1" to "Day <count>": day d logs d % 10 of 10. */
+function seedDays(count: number) {
+  for (let day = 1; day <= count; day++) {
+    const session = startEmptySession(db, `Day ${day}`);
+    logAndFinish(
+      session.id,
+      [{ key: 'free_throws', mode: 'attempts', sets: [{ target: 10, logged: day % 10 }] }],
+      new Date(2026, 8, day, 10, 0),
+      30,
+    );
+  }
+}
+
+const profileTab = () => screen.getByRole('tab', { name: 'Profile' });
 const workoutTab = () => screen.getByRole('tab', { name: 'Workout' });
 
 const MORNING = 'Morning Workout, Tue, Sep 15, 2026';
 
-describe('the History list', () => {
+describe('the history on the Profile tab', () => {
   test('no finished session shows the empty state', async () => {
     await launch();
     const user = setupUser();
 
-    await user.press(historyTab());
+    await user.press(profileTab());
 
     expect(screen.getByText('No workouts yet')).toBeOnTheScreen();
-    expect(screen.queryByText(/workouts? logged/)).toBeNull();
+    expect(screen.getByText('No workouts logged yet')).toBeOnTheScreen();
+    expect(screen.queryByRole('header', { name: 'Your stats' })).toBeNull();
+    expect(screen.queryByRole('header', { name: 'History' })).toBeNull();
     expectAccessibleControls();
   });
 
@@ -200,7 +230,7 @@ describe('the History list', () => {
     await launch();
     const user = setupUser();
 
-    await user.press(historyTab());
+    await user.press(profileTab());
 
     expect(screen.getByText('3 workouts logged')).toBeOnTheScreen();
     expect(screen.queryByRole('button', { name: /^Still going, / })).toBeNull();
@@ -239,11 +269,11 @@ describe('the History list', () => {
     await launch();
     const user = setupUser();
 
-    await user.press(historyTab());
+    await user.press(profileTab());
 
     expect(screen.getByRole('header', { name: 'FG% evolution' })).toBeOnTheScreen();
-    // Footwork has checks only: two points, not three
-    expect(screen.getByText('Last 2 workouts')).toBeOnTheScreen();
+    // the default range; Footwork has checks only, so two points, not three
+    expect(screen.getByRole('button', { name: 'Chart range, last 5 workouts' })).toBeOnTheScreen();
     expect(screen.getByText('latest workout')).toBeOnTheScreen();
     expect(
       screen.getByRole('image', {
@@ -253,6 +283,43 @@ describe('the History list', () => {
     // the latest value, above the chart and colored by its band (the row has its own 70%)
     expect(screen.getAllByText('70%')[0]).toHaveStyle({ color: colors.success });
     expectAccessibleControls();
+  });
+
+  test('the chart range menu shows the last 5, 10, 20 or all workouts, and keeps the choice', async () => {
+    seedDays(12);
+    await launch();
+    const user = setupUser();
+    await user.press(profileTab());
+    const chart = () => screen.getByRole('image', { name: /^FG% over/ });
+    const rangeButton = (range: string) =>
+      screen.getByRole('button', { name: `Chart range, ${range}` });
+
+    expect(chart().props.accessibilityLabel).toMatch(/^FG% over the last 5 workouts: Sep 8 /);
+
+    await user.press(rangeButton('last 5 workouts'));
+    expect(screen.getByText('Show in the chart')).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Last 5 workouts' })).toBeSelected();
+    expect(screen.getByRole('button', { name: 'Last 20 workouts' })).not.toBeSelected();
+    expectAccessibleControls();
+    await user.press(screen.getByRole('button', { name: 'Last 10 workouts' }));
+
+    expect(screen.queryByText('Show in the chart')).toBeNull();
+    expect(rangeButton('last 10 workouts')).toBeOnTheScreen();
+    expect(screen.getByText('Last 10')).toBeOnTheScreen();
+    expect(chart().props.accessibilityLabel).toMatch(/^FG% over the last 10 workouts: Sep 3 /);
+
+    await user.press(rangeButton('last 10 workouts'));
+    await user.press(screen.getByRole('button', { name: 'All workouts' }));
+
+    // beyond 10 points the label sums up: Sep 1 logged 1 / 10, Sep 9 the best 9 / 10, Sep 12 2 / 10
+    expect(chart().props.accessibilityLabel).toBe(
+      'FG% over all 12 workouts, from Sep 1 to Sep 12: first 10%, best 90%, latest 20%',
+    );
+
+    // the choice lasts while the app is open
+    await user.press(workoutTab());
+    await user.press(profileTab());
+    expect(rangeButton('all workouts')).toBeOnTheScreen();
   });
 
   test('no FG% evolution card when no session has a shooting set', async () => {
@@ -266,10 +333,14 @@ describe('the History list', () => {
     await launch();
     const user = setupUser();
 
-    await user.press(historyTab());
+    await user.press(profileTab());
 
     expect(screen.getByText('1 workout logged')).toBeOnTheScreen();
     expect(screen.queryByRole('header', { name: 'FG% evolution' })).toBeNull();
+    // the sessions still count; no FG% to show
+    expect(screen.getByTestId('stat-sessions')).toHaveTextContent('1');
+    expect(screen.getByTestId('avg-fg')).toHaveTextContent('—');
+    expect(screen.getByTestId('avg-fg')).toHaveStyle({ color: colors.textSecondary });
   });
 
   test('the count is singular for one workout', async () => {
@@ -284,9 +355,208 @@ describe('the History list', () => {
     await launch();
     const user = setupUser();
 
-    await user.press(historyTab());
+    await user.press(profileTab());
 
     expect(screen.getByText('1 workout logged')).toBeOnTheScreen();
+  });
+});
+
+describe('Your stats', () => {
+  test('the sessions, and AVG FG% as Σmakes / Σattempts over every workout, colored by its band', async () => {
+    // 7 / 10 and 5 / 14: 12 / 24 is 50%, where the average of 70% and 35.7% would be 52.9%
+    seedHistory();
+    await launch();
+    const user = setupUser();
+
+    await user.press(profileTab());
+
+    expect(screen.getByRole('header', { name: 'Your stats' })).toBeOnTheScreen();
+    expect(screen.getByText('Sessions')).toBeOnTheScreen();
+    expect(screen.getByTestId('stat-sessions')).toHaveTextContent('3');
+    expect(screen.getByText('Avg FG%')).toBeOnTheScreen();
+    expect(screen.getByTestId('avg-fg')).toHaveTextContent('50%');
+    expect(screen.getByTestId('avg-fg')).toHaveStyle({ color: colors.neutralStat });
+    expect(screen.getByText('Shots made')).toBeOnTheScreen();
+    expect(screen.getByTestId('stat-shots')).toHaveTextContent('12 / 24');
+    // 42 + 65 + 20 min
+    expect(screen.getByText('Time trained')).toBeOnTheScreen();
+    expect(screen.getByTestId('stat-time')).toHaveTextContent('2 h 07 min');
+    // two workouts with shots: not enough for a trend
+    expect(screen.getByTestId('stat-trend')).toHaveTextContent('—');
+    expect(
+      screen.getByLabelText('FG% trend, not enough workouts yet. After 10 workouts with shots'),
+    ).toBeOnTheScreen();
+    expectAccessibleControls();
+  });
+
+  test('the FG% trend compares the last 5 workouts with shots with the 5 before', async () => {
+    // Sep 12 to 8: 2 + 1 + 0 + 9 + 8 = 20 / 50, 40%; Sep 7 to 3: 7 + 6 + 5 + 4 + 3 = 25 / 50, 50%
+    seedDays(12);
+    await launch();
+    const user = setupUser();
+
+    await user.press(profileTab());
+
+    expect(screen.getByTestId('stat-trend')).toHaveTextContent('10 pts');
+    expect(screen.getByTestId('stat-trend')).toHaveStyle({ color: colors.error });
+    expect(
+      screen.getByLabelText('FG% trend, down 10 points. Last 5 vs previous 5 workouts'),
+    ).toBeOnTheScreen();
+  });
+});
+
+describe('See all', () => {
+  test('the Profile lists the last 5 workouts; See all opens every one, by month', async () => {
+    seedDays(7);
+    const app = await launch();
+    const user = setupUser();
+    await user.press(profileTab());
+    const rowNames = (rows: ReturnType<typeof screen.getAllByRole>) =>
+      rows.map((row) => row.props.accessibilityLabel.split(',')[0]);
+
+    expect(screen.getByRole('header', { name: 'History' })).toBeOnTheScreen();
+    expect(rowNames(screen.getAllByRole('button', { name: /^Day \d+, / }))).toEqual([
+      'Day 7',
+      'Day 6',
+      'Day 5',
+      'Day 4',
+      'Day 3',
+    ]);
+
+    await user.press(screen.getByRole('button', { name: 'See all' }));
+
+    expect(app.getPathname()).toBe('/history');
+    expect(screen.getByRole('header', { name: 'September 2026' })).toBeOnTheScreen();
+    expect(rowNames(screen.getAllByRole('button', { name: /^Day \d+, / }))).toEqual([
+      'Day 7',
+      'Day 6',
+      'Day 5',
+      'Day 4',
+      'Day 3',
+      'Day 2',
+      'Day 1',
+    ]);
+    expect(screen.getByText('7 workouts logged')).toBeOnTheScreen();
+    expectAccessibleControls();
+
+    await user.press(screen.getByRole('button', { name: /^Day 1, / }));
+    expect(screen.getByRole('header', { name: 'Day 1' })).toBeOnTheScreen();
+    await user.press(screen.getByRole('button', { name: 'Back' }));
+    expect(app.getPathname()).toBe('/history');
+
+    await user.press(screen.getByRole('button', { name: 'Back' }));
+    expect(app.getPathname()).toBe('/profile');
+  });
+
+  test('no See all with 5 workouts or fewer', async () => {
+    seedDays(5);
+    await launch();
+    const user = setupUser();
+
+    await user.press(profileTab());
+
+    expect(screen.getAllByRole('button', { name: /^Day \d+, / })).toHaveLength(5);
+    expect(screen.queryByRole('button', { name: 'See all' })).toBeNull();
+  });
+});
+
+// The avatar is decorative (hidden from accessibility): what presses it names it.
+const HIDDEN = { includeHiddenElements: true };
+const avatarPhoto = () => screen.queryByTestId('avatar-photo', HIDDEN);
+
+/** The next gallery pick returns this file. */
+function pickNext(asset: { uri: string; mimeType?: string; duration?: number }) {
+  jest.mocked(launchImageLibraryAsync).mockResolvedValueOnce({
+    canceled: false,
+    assets: [{ width: 1, height: 1, ...asset }],
+  } as Awaited<ReturnType<typeof launchImageLibraryAsync>>);
+}
+
+describe('the profile', () => {
+  test('starts as "Player"; Edit Profile saves a name and a photo', async () => {
+    seedHistory();
+    const app = await launch();
+    const user = setupUser();
+    await user.press(profileTab());
+
+    expect(screen.getByRole('header', { name: 'Profile' })).toBeOnTheScreen();
+    expect(screen.getByText('Player')).toBeOnTheScreen();
+    expect(screen.getByText('3 workouts logged')).toBeOnTheScreen();
+    expect(avatarPhoto()).toBeNull();
+    expectAccessibleControls();
+
+    await user.press(screen.getByRole('button', { name: 'Edit Profile' }));
+
+    expect(app.getPathname()).toBe('/edit-profile');
+    expect(screen.getByRole('header', { name: 'Edit Profile' })).toBeOnTheScreen();
+    expectAccessibleControls();
+    await user.type(screen.getByLabelText('Name'), '  João ');
+    pickNext({ uri: 'file:///gallery/me.jpg', mimeType: 'image/jpeg' });
+    await user.press(screen.getByRole('button', { name: 'Choose photo' }));
+    expect(screen.getByRole('button', { name: 'Change photo' })).toBeOnTheScreen();
+    expect(avatarPhoto()!.props.source).toEqual({ uri: 'file:///gallery/me.jpg' });
+    await user.press(screen.getByRole('button', { name: 'Save Profile' }));
+
+    expect(app.getPathname()).toBe('/profile');
+    expect(screen.getByText('João')).toBeOnTheScreen();
+    // copied into the app's storage
+    const uri = avatarPhoto()!.props.source.uri as string;
+    expect(uri).toMatch(/^file:\/\/\/docs\/profile-photo\/.+\.jpg$/);
+    expect([...files]).toEqual([uri]);
+  });
+
+  test('the avatar opens Edit Profile; Cancel keeps the profile, Remove photo shows the initial', async () => {
+    const { saveProfile } = jest.requireActual('@/features/profile/actions');
+    saveProfile('joão', {
+      type: 'replace',
+      media: { uri: 'file:///gallery/me.png', extension: 'png', kind: 'image' },
+    });
+    const [stored] = [...files];
+    const app = await launch();
+    const user = setupUser();
+    await user.press(profileTab());
+    const editPhoto = () =>
+      user.press(screen.getByRole('button', { name: 'Change profile photo' }));
+
+    await editPhoto();
+    expect(app.getPathname()).toBe('/edit-profile');
+    await user.press(screen.getByRole('button', { name: 'Remove photo' }));
+    expect(screen.getByRole('button', { name: 'Choose photo' })).toBeOnTheScreen();
+    await user.press(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(app.getPathname()).toBe('/profile');
+    expect(avatarPhoto()!.props.source).toEqual({ uri: stored });
+    expect(files.has(stored)).toBe(true);
+
+    await editPhoto();
+    await user.press(screen.getByRole('button', { name: 'Remove photo' }));
+    await user.press(screen.getByRole('button', { name: 'Save Profile' }));
+
+    expect(avatarPhoto()).toBeNull();
+    expect(screen.getByText('J', HIDDEN)).toBeOnTheScreen();
+    expect(files.size).toBe(0);
+
+    // an empty name: "Player", and no letter
+    await editPhoto();
+    await user.clear(screen.getByLabelText('Name'));
+    await user.press(screen.getByRole('button', { name: 'Save Profile' }));
+
+    expect(screen.getByText('Player')).toBeOnTheScreen();
+    expect(screen.queryByText('J', HIDDEN)).toBeNull();
+  });
+
+  test('a video is refused as the photo', async () => {
+    await launch('/edit-profile');
+    const user = setupUser();
+
+    pickNext({ uri: 'file:///gallery/clip.mp4', mimeType: 'video/mp4', duration: 5_000 });
+    await user.press(screen.getByRole('button', { name: 'Choose photo' }));
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      "This file type isn't supported. Choose an image.",
+    );
+    expect(avatarPhoto()).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Remove photo' })).toBeNull();
   });
 });
 
@@ -295,7 +565,7 @@ describe('the session detail', () => {
     const { morning } = seedHistory();
     const app = await launch();
     const user = setupUser();
-    await user.press(historyTab());
+    await user.press(profileTab());
 
     await user.press(screen.getByRole('button', { name: MORNING }));
 
@@ -320,11 +590,16 @@ describe('the session detail', () => {
     expect(screen.getByLabelText('Free Throws note')).toHaveTextContent('elbow in');
     expect(screen.queryByRole('checkbox')).toBeNull();
     expectAccessibleControls();
-    expect(JSON.stringify(screen.toJSON())).not.toContain('"TextInput"');
+    // no text field on this screen (the tabs under it keep the Exercises search mounted)
+    expect(
+      screen.container.queryAll(
+        (node) => /TextInput/.test(node.type) && !isHiddenFromAccessibility(node),
+      ),
+    ).toEqual([]);
 
     await user.press(screen.getByRole('button', { name: 'Back' }));
 
-    expect(app.getPathname()).toBe('/history');
+    expect(app.getPathname()).toBe('/profile');
   });
 
   test('a fixed-makes session shows attempts as the logged column', async () => {
@@ -359,7 +634,7 @@ describe('deleting a session', () => {
     const { morning } = seedHistory();
     const app = await launch();
     const user = setupUser();
-    await user.press(historyTab());
+    await user.press(profileTab());
     await user.press(screen.getByRole('button', { name: MORNING }));
 
     await user.press(screen.getByRole('button', { name: 'Delete workout' }));
@@ -380,13 +655,13 @@ describe('deleting a session', () => {
     const templateBefore = getWorkoutWithExercises(db, template.id);
     const app = await launch();
     const user = setupUser();
-    await user.press(historyTab());
+    await user.press(profileTab());
     await user.press(screen.getByRole('button', { name: MORNING }));
     await user.press(screen.getByRole('button', { name: 'Delete workout' }));
 
     await pressAlert('Delete');
 
-    expect(app.getPathname()).toBe('/history');
+    expect(app.getPathname()).toBe('/profile');
     expect(screen.queryByRole('button', { name: MORNING })).toBeNull();
     expect(screen.queryByText('Workout not found')).toBeNull();
     expect(screen.getByText('2 workouts logged')).toBeOnTheScreen();
@@ -421,7 +696,7 @@ describe('finishing a workout', () => {
 
     await logFreeThrowsAndFinish(user);
     expect(app.getPathname()).toBe('/');
-    await user.press(historyTab());
+    await user.press(profileTab());
 
     expect(screen.getByText('1 workout logged')).toBeOnTheScreen();
     const row = within(
@@ -435,11 +710,11 @@ describe('finishing a workout', () => {
     expect(screen.getByLabelText('Set 1 attempts')).toHaveTextContent('10');
   });
 
-  test('a mounted History tab catches up when opened again, and sits out writes meanwhile', async () => {
+  test('a mounted Profile tab catches up when opened again, and sits out writes meanwhile', async () => {
     const listSpy = jest.spyOn(sessionRepo, 'listFinishedSessionsWithExercises');
     await launch();
     const user = setupUser();
-    await user.press(historyTab());
+    await user.press(profileTab());
     expect(screen.getByText('No workouts yet')).toBeOnTheScreen();
     await user.press(workoutTab());
     listSpy.mockClear();
@@ -448,7 +723,7 @@ describe('finishing a workout', () => {
 
     // a whole workout of writes happened with History unfocused: no re-read
     expect(listSpy).not.toHaveBeenCalled();
-    await user.press(historyTab());
+    await user.press(profileTab());
 
     expect(listSpy).toHaveBeenCalled();
     expect(screen.queryByText('No workouts yet')).toBeNull();

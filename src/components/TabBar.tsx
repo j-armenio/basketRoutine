@@ -1,18 +1,32 @@
 import { colors } from '@/theme/colors';
-import { border, radius, size, spacing } from '@/theme/spacing';
-import { CommonActions } from 'expo-router/react-navigation';
-import type { BottomTabBarProps } from 'expo-router/js-tabs';
+import { border, size, spacing } from '@/theme/spacing';
+import type {
+  MaterialTopTabNavigationEventMap,
+  MaterialTopTabNavigationOptions,
+} from 'expo-router/js-top-tabs';
+import {
+  CommonActions,
+  type NavigationHelpers,
+  type ParamListBase,
+  type TabNavigationState,
+} from 'expo-router/react-navigation';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from './AppText';
 import { useKeyboardVisible } from './useKeyboardVisible';
+
+export type TabBarProps = {
+  state: TabNavigationState<ParamListBase>;
+  descriptors: Record<string, { options: MaterialTopTabNavigationOptions }>;
+  navigation: NavigationHelpers<ParamListBase, MaterialTopTabNavigationEventMap>;
+};
 
 /**
  * The bottom navigation: each tab's icon and label, the active one with a green pill behind its
  * icon and a green label. Hidden while the keyboard is open. Each item has the `tab` role and the
  * screen's `tabBarAccessibilityLabel`.
  */
-export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+export function TabBar({ state, descriptors, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
   const keyboardVisible = useKeyboardVisible();
   if (keyboardVisible) return null;
@@ -54,11 +68,13 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
             onLongPress={() => navigation.emit({ type: 'tabLongPress', target: route.key })}
             style={styles.item}
           >
-            <View style={[styles.pill, focused && styles.pillActive]}>
+            <View style={styles.pill}>
+              {/* Mounted with the active tab rather than a background switched on later: Android
+                  drew a background added to an existing view without its rounded corners. */}
+              {focused && <View testID="tab-pill" style={styles.pillActive} />}
               {options.tabBarIcon?.({
                 focused,
                 color: focused ? colors.onSecondary : colors.textSecondary,
-                size: size.icon,
               })}
             </View>
             <AppText
@@ -97,9 +113,14 @@ const styles = StyleSheet.create({
     height: size.navPillHeight,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: radius.pill,
   },
   pillActive: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    borderRadius: size.navPillHeight / 2,
     backgroundColor: colors.secondary,
   },
 });

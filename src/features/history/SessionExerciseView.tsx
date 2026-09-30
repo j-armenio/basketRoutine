@@ -9,6 +9,7 @@ import { colors } from '@/theme/colors';
 import { size, spacing } from '@/theme/spacing';
 import { tabularNums } from '@/theme/typography';
 import { StyleSheet, View } from 'react-native';
+import { TacticalBoardSlot } from '../tacticalBoard/TacticalBoardSlot';
 import type { SessionExerciseDetail, SessionSetDetail } from '../workout/hooks';
 import { SetNumber } from '../workout/SetNumber';
 import { columnRoles, setTable } from '../workout/setTable';
@@ -18,7 +19,8 @@ const EMPTY = '—';
 
 /**
  * A finished session's exercise, read-only: the sets as they were stored (an empty set shows
- * `—`), the exercise total and the note when there is one. Nothing in it is editable.
+ * `—`), the exercise total, the note and the tactical board when there are some. Nothing in it is
+ * editable.
  */
 export function SessionExerciseView({ exercise }: { exercise: SessionExerciseDetail }) {
   const { targetMode } = exercise;
@@ -32,6 +34,7 @@ export function SessionExerciseView({ exercise }: { exercise: SessionExerciseDet
           {modeSubtitle(targetMode)}
         </AppText>
       </View>
+      <TacticalBoardSlot board={exercise.tacticalBoard} exerciseName={exercise.name} />
       <View style={styles.table}>
         <SetTableHeader targetMode={targetMode} readOnly />
         {exercise.sets.map((set, position) =>

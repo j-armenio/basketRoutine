@@ -8,10 +8,14 @@ import {
   moveExercise,
   removeExercise,
   rename,
+  setBoard,
   setTarget,
   toSaveInput,
   type TemplateDraft,
 } from './templateDraft';
+import type { TacticalBoard } from '@/domain/tacticalBoard';
+
+const board: TacticalBoard = { version: 1, elements: [{ type: 'x', at: [0.5, 0.2] }] };
 
 const freeThrows = { id: 1, name: 'Free Throws', trackingType: 'makes_attempts' as const };
 const figure8 = { id: 2, name: 'Figure 8', trackingType: 'check' as const };
@@ -35,6 +39,16 @@ describe('addExercise', () => {
       ['Mikan', 'makes', [5]],
       ['Figure 8', null, [null]],
     ]);
+  });
+  test('a new exercise has no tactical board; setBoard sets and removes one', () => {
+    const draft = sample();
+    const key = draft.exercises[0].key;
+    expect(draft.exercises.map((e) => e.tacticalBoard)).toEqual([null, null]);
+    expect(setBoard(draft, key, board).exercises.map((e) => e.tacticalBoard)).toEqual([
+      board,
+      null,
+    ]);
+    expect(setBoard(setBoard(draft, key, board), key, null).exercises[0].tacticalBoard).toBeNull();
   });
 
   test('gives every exercise and set its own key', () => {
@@ -114,12 +128,14 @@ describe('draftFromWorkout and toSaveInput', () => {
         targetMode: 'attempts' as const,
         exercise: { name: 'Free Throws', trackingType: 'makes_attempts' as const },
         sets: [{ targetValue: 10 }, { targetValue: 12 }],
+        tacticalBoard: board,
       },
       {
         exerciseId: 2,
         targetMode: null,
         exercise: { name: 'Figure 8', trackingType: 'check' as const },
         sets: [{ targetValue: null }],
+        tacticalBoard: null,
       },
     ],
   };
@@ -132,8 +148,8 @@ describe('draftFromWorkout and toSaveInput', () => {
       routineId: 2,
       name: 'Day',
       exercises: [
-        { exerciseId: 1, targetMode: 'attempts', targetValues: [10, 12] },
-        { exerciseId: 2, targetMode: null, targetValues: [null] },
+        { exerciseId: 1, targetMode: 'attempts', targetValues: [10, 12], tacticalBoard: board },
+        { exerciseId: 2, targetMode: null, targetValues: [null], tacticalBoard: null },
       ],
     });
   });
@@ -160,6 +176,7 @@ describe('isDirty', () => {
           targetMode: 'attempts',
           exercise: { name: 'Free Throws', trackingType: 'makes_attempts' },
           sets: [{ targetValue: 10 }],
+          tacticalBoard: null,
         },
       ],
     });
@@ -182,6 +199,16 @@ describe('isDirty', () => {
     expect(isDirty(base, removeExercise(base, key))).toBe(true);
     const two = addExercise(base, figure8, null);
     expect(isDirty(two, moveExercise(two, key, 1))).toBe(true);
+  });
+
+  test('adding, changing or removing a tactical board is a change; the same board is not', () => {
+    const base = initial();
+    const key = base.exercises[0].key;
+    const withBoard = setBoard(base, key, board);
+    expect(isDirty(base, withBoard)).toBe(true);
+    expect(isDirty(withBoard, setBoard(withBoard, key, { version: 1, elements: [] }))).toBe(true);
+    expect(isDirty(withBoard, setBoard(withBoard, key, null))).toBe(true);
+    expect(isDirty(withBoard, setBoard(withBoard, key, structuredClone(board)))).toBe(false);
   });
 
   test('typing a target back to its old value is not a change', () => {

@@ -12,6 +12,7 @@ import {
   reorderSessionExercises,
   startEmptySession,
   startSessionFromWorkout,
+  updateSessionExerciseBoard,
   updateSessionExerciseNote,
   updateSessionSet,
   type SessionSetPatch,
@@ -19,6 +20,7 @@ import {
 import { archivedExerciseIds } from '@/db/repositories/exercises';
 import { getWorkout, getWorkoutWithExercises } from '@/db/repositories/workouts';
 import { defaultWorkoutName } from '@/domain/defaults';
+import type { TacticalBoard } from '@/domain/tacticalBoard';
 import { sameStructure, structureFromSession, structureFromTemplate } from '@/domain/template';
 import type { TargetMode } from '@/domain/types';
 import { run } from '../dataStore';
@@ -41,6 +43,11 @@ export function moveExercise(sessionId: number, orderedIds: number[]) {
 
 export function updateNote(sessionExerciseId: number, note: string) {
   return run(() => updateSessionExerciseNote(db, sessionExerciseId, note));
+}
+
+/** Sets or (with `null`) removes the exercise's tactical board, on the session only. */
+export function setBoard(sessionExerciseId: number, tacticalBoard: TacticalBoard | null) {
+  return run(() => updateSessionExerciseBoard(db, sessionExerciseId, tacticalBoard));
 }
 
 export function addSet(sessionExerciseId: number) {

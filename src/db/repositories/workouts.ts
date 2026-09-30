@@ -1,4 +1,5 @@
 import { DomainError } from '@/domain/errors';
+import { validateBoard, type TacticalBoard } from '@/domain/tacticalBoard';
 import type { TargetMode } from '@/domain/types';
 import { validateExerciseConfig, validateTargetValue } from '@/domain/validation';
 import { and, asc, eq, isNull, max } from 'drizzle-orm';
@@ -83,6 +84,8 @@ export interface WorkoutExerciseInput {
   targetMode?: TargetMode | null;
   /** One entry per template set: integers >= 1, or all `null` for `check`. */
   targetValues: (number | null)[];
+  /** Absent or `null`: no tactical board. */
+  tacticalBoard?: TacticalBoard | null;
 }
 
 /** Appends the exercise and its sets after validating them. No transaction of its own. */
@@ -95,6 +98,8 @@ function insertWorkoutExercise(
   const exercise = requireActiveExercise(db, exerciseId);
   const targetMode = input.targetMode ?? null;
   assertValid(validateExerciseConfig(exercise.trackingType, targetMode));
+  const tacticalBoard = input.tacticalBoard ?? null;
+  if (tacticalBoard !== null) assertValid(validateBoard(tacticalBoard));
 
   if (input.targetValues.length === 0) throw new DomainError('invalid_set_count');
   for (const value of input.targetValues) {
@@ -119,6 +124,7 @@ function insertWorkoutExercise(
       exerciseId,
       position: nextPosition(last?.value),
       targetMode,
+      tacticalBoard,
     })
     .returning()
     .get();

@@ -9,9 +9,11 @@ import { formatFgPct } from '@/domain/format';
 import { summarizeExercise } from '@/domain/summary';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
-import { addSet, removeExercise } from './actions';
+import { TacticalBoardSlot } from '../tacticalBoard/TacticalBoardSlot';
+import { addSet, removeExercise, setBoard } from './actions';
 import { CheckSetRow } from './CheckSetRow';
 import { ExerciseNote } from './ExerciseNote';
 import type { SessionExerciseDetail } from './hooks';
@@ -26,6 +28,7 @@ type ExerciseCardProps = {
 };
 
 export function ExerciseCard({ exercise, index, count, onMove }: ExerciseCardProps) {
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const { targetMode } = exercise;
   const summary = summarizeExercise(exercise);
@@ -34,6 +37,11 @@ export function ExerciseCard({ exercise, index, count, onMove }: ExerciseCardPro
     Alert.alert('Remove exercise?', `${exercise.name} and its sets will be removed.`, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Remove', style: 'destructive', onPress: () => removeExercise(exercise.id) },
+    ]);
+  const confirmRemoveBoard = () =>
+    Alert.alert('Remove tactical board?', `The drawing on ${exercise.name} will be deleted.`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Remove', style: 'destructive', onPress: () => setBoard(exercise.id, null) },
     ]);
 
   return (
@@ -45,6 +53,14 @@ export function ExerciseCard({ exercise, index, count, onMove }: ExerciseCardPro
             {modeSubtitle(targetMode)}
           </AppText>
         </View>
+        {!exercise.tacticalBoard && (
+          <IconButton
+            color={colors.iconMuted}
+            icon="assignment_add"
+            accessibilityLabel={`Add tactical board for ${exercise.name}`}
+            onPress={() => router.push(`/tactical-board?sessionExerciseId=${exercise.id}`)}
+          />
+        )}
         <IconButton
           color={colors.iconMuted}
           icon="more_vert"
@@ -52,6 +68,11 @@ export function ExerciseCard({ exercise, index, count, onMove }: ExerciseCardPro
           onPress={() => setMenuOpen(true)}
         />
       </View>
+      <TacticalBoardSlot
+        board={exercise.tacticalBoard}
+        exerciseName={exercise.name}
+        onOpen={() => router.push(`/tactical-board?sessionExerciseId=${exercise.id}`)}
+      />
       <View style={styles.table}>
         <SetTableHeader targetMode={targetMode} />
         {exercise.sets.map((set, position) =>
@@ -105,6 +126,16 @@ export function ExerciseCard({ exercise, index, count, onMove }: ExerciseCardPro
             disabled: index === count - 1,
             onPress: () => onMove(1),
           },
+          ...(exercise.tacticalBoard
+            ? [
+                {
+                  label: 'Remove tactical board',
+                  icon: 'layers_clear' as const,
+                  destructive: true,
+                  onPress: confirmRemoveBoard,
+                },
+              ]
+            : []),
           { label: 'Remove exercise', icon: 'delete', destructive: true, onPress: confirmRemove },
         ]}
         onClose={() => setMenuOpen(false)}

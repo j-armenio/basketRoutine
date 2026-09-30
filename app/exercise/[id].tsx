@@ -2,7 +2,6 @@ import { ActionSheet, type ActionSheetOption } from '@/components/ActionSheet';
 import { AppText } from '@/components/AppText';
 import { BottomActionBar } from '@/components/BottomActionBar';
 import { EmptyState } from '@/components/EmptyState';
-import { Icon } from '@/components/Icon';
 import { IconButton } from '@/components/IconButton';
 import { Screen } from '@/components/Screen';
 import { reasonMessage } from '@/domain/messages';
@@ -14,7 +13,7 @@ import { MediaView } from '@/features/exercises/MediaView';
 import { useExercise } from '@/features/exercises/hooks';
 import { leaveScreen } from '@/features/workout/navigation';
 import { colors } from '@/theme/colors';
-import { radius, size, spacing } from '@/theme/spacing';
+import { radius, size } from '@/theme/spacing';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
@@ -83,7 +82,7 @@ export default function ExerciseDetailScreen() {
       subtitle={`${CATEGORY_LABELS[exercise.category]} · ${TRACKING_LABELS[exercise.trackingType]}`}
       left={back}
       right={
-        // A predefined exercise is read-only: nothing to put in a menu.
+        // A predefined exercise is read-only: no menu, which is also how it shows.
         exercise.isCustom && (
           <IconButton
             icon="more_vert"
@@ -117,14 +116,6 @@ export default function ExerciseDetailScreen() {
       ) : (
         <AppText>{exercise.description}</AppText>
       )}
-      {!exercise.isCustom && (
-        <View style={styles.predefined}>
-          <Icon name="lock" size={size.iconSmall} color={colors.textSecondary} />
-          <AppText variant="caption" tone="secondary">
-            Predefined exercise. It can&apos;t be edited.
-          </AppText>
-        </View>
-      )}
       <ExerciseStatsCard exerciseId={exercise.id} trackingType={exercise.trackingType} />
       <ActionSheet
         visible={menuOpen}
@@ -141,10 +132,5 @@ const styles = StyleSheet.create({
     width: '100%',
     height: size.mediaHero,
     borderRadius: radius.card,
-  },
-  predefined: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
   },
 });

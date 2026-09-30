@@ -1,6 +1,6 @@
 import { formatElapsed } from '@/domain/format';
 import { colors } from '@/theme/colors';
-import { radius, size, spacing } from '@/theme/spacing';
+import { size, spacing } from '@/theme/spacing';
 import { tabularNums } from '@/theme/typography';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
     gap: spacing.xsPlus,
     paddingLeft: spacing.md,
     paddingRight: spacing.mdPlus,
-    borderRadius: radius.pill,
+    borderRadius: size.pill / 2,
     backgroundColor: colors.secondary,
   },
   text: {

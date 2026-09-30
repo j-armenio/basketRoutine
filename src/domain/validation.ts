@@ -8,7 +8,8 @@ export type ValidationReason =
   | 'target_mode_required'
   | 'target_mode_not_allowed'
   | 'value_not_allowed'
-  | 'invalid_media';
+  | 'invalid_media'
+  | 'invalid_board';
 
 export type ValidationResult = { ok: true } | { ok: false; reason: ValidationReason };
 

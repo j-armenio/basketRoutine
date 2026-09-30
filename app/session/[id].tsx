@@ -34,7 +34,7 @@ export default function SessionDetailScreen() {
           icon="history"
           title="Workout not found"
           message="This workout doesn't exist or isn't finished."
-          action={{ label: 'Back to History', onPress: () => router.dismissTo('/history') }}
+          action={{ label: 'Back to Profile', onPress: () => router.dismissTo('/profile') }}
         />
       </Screen>
     );

@@ -4,7 +4,7 @@ import { listExerciseResults } from '@/db/repositories/sessions';
 import { exerciseStats } from '@/domain/exerciseStats';
 import { useMemo } from 'react';
 import { useDataVersion } from '../dataStore';
-import { groupByCategory } from './catalogList';
+import { categoryCards, groupByCategory } from './catalogList';
 
 // Sync repository reads redone when the data store's version changes, like `history/hooks.ts`.
 // The catalog is a few dozen rows, so no focus gate is needed.
@@ -16,6 +16,15 @@ export function useExercises({ search, category, customOnly }: ExerciseFilter = 
     void version; // re-read after any write
     return groupByCategory(listExercises(db, { search, category, customOnly }));
   }, [version, search, category, customOnly]);
+}
+
+/** The Exercises tab's cards (the categories and Custom), with how many active exercises each opens. */
+export function useCategoryCards() {
+  const version = useDataVersion();
+  return useMemo(() => {
+    void version; // re-read after any write
+    return categoryCards(listExercises(db));
+  }, [version]);
 }
 
 /** How many active exercises the whole catalog has, whatever the filter. */

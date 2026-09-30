@@ -1,6 +1,6 @@
 import { Icon } from '@/components/Icon';
 import { colors } from '@/theme/colors';
-import { radius, size } from '@/theme/spacing';
+import { size } from '@/theme/spacing';
 import { Image } from 'expo-image';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useState } from 'react';
@@ -92,6 +92,7 @@ function VideoStill({
   iconSize: number;
 }) {
   const thumbnail = useVideoThumbnail(source);
+  const badge = Math.round(iconSize * 0.75);
   // No first frame could be made: a paused player shows it instead (heavier, so only as a fallback).
   if (thumbnail === null) {
     return <VideoPlayback source={source} style={style} fit={fit} controls={false} paused />;
@@ -103,8 +104,8 @@ function VideoStill({
       style={[styles.box, styles.center, style]}
     >
       {thumbnail && <Image source={thumbnail} contentFit={fit} style={StyleSheet.absoluteFill} />}
-      <View style={styles.badge}>
-        <Icon name="play_arrow" size={Math.round(iconSize * 0.75)} color={colors.textPrimary} />
+      <View style={[styles.badge, { width: badge, height: badge, borderRadius: badge / 2 }]}>
+        <Icon name="play_arrow" size={badge} color={colors.textPrimary} />
       </View>
     </View>
   );
@@ -151,7 +152,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   badge: {
-    borderRadius: radius.pill,
     backgroundColor: colors.background,
   },
 });

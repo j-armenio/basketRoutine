@@ -14,6 +14,7 @@ function exercise(overrides: Partial<SessionExerciseDetail>): SessionExerciseDet
     trackingType: 'makes_attempts',
     targetMode: 'attempts',
     note: '',
+    tacticalBoard: null,
     sets: [],
     ...overrides,
   };

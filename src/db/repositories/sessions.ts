@@ -1,6 +1,7 @@
 import { DEFAULT_TARGET_VALUE } from '@/domain/defaults';
 import { DomainError } from '@/domain/errors';
 import { summarizeSession } from '@/domain/summary';
+import { validateBoard, type TacticalBoard } from '@/domain/tacticalBoard';
 import type { SessionSummary } from '@/domain/summary';
 import type { TargetMode } from '@/domain/types';
 import { validateExerciseConfig, validateSet } from '@/domain/validation';
@@ -84,6 +85,7 @@ function insertSessionFromWorkout(db: Db, workoutId: number): Session {
         category: item.exercise.category,
         trackingType: item.exercise.trackingType,
         targetMode: item.targetMode,
+        tacticalBoard: item.tacticalBoard,
       })
       .returning()
       .get();
@@ -104,7 +106,7 @@ function insertSessionFromWorkout(db: Db, workoutId: number): Session {
 
 /**
  * Copies the workout into a new session: its name, and for each exercise the
- * catalog name/category/trackingType plus the targetMode and template sets
+ * catalog name/category/trackingType plus the targetMode, tactical board and template sets
  * (with no logged value). Never writes to the template.
  */
 export function startSessionFromWorkout(db: Db, workoutId: number): Session {
@@ -224,6 +226,25 @@ export function updateSessionExerciseNote(
 }
 
 /**
+ * Sets or (with `null`) removes the exercise's tactical board. Only the session's copy changes:
+ * the template gets it through "Update template" at Finish.
+ */
+export function updateSessionExerciseBoard(
+  db: Db,
+  sessionExerciseId: number,
+  tacticalBoard: TacticalBoard | null,
+): SessionExercise {
+  requireEditableExercise(db, sessionExerciseId);
+  if (tacticalBoard !== null) assertValid(validateBoard(tacticalBoard));
+  return db
+    .update(sessionExercises)
+    .set({ tacticalBoard })
+    .where(eq(sessionExercises.id, sessionExerciseId))
+    .returning()
+    .get();
+}
+
+/**
  * Appends a set. For `makes_attempts` exercises the target defaults to the
  * last set's target, or to the mode's default target when there is no set
  * (not reachable through the app, which keeps at least one set, but kept as a safety net);
@@ -326,9 +347,9 @@ export function finishSession(db: Db, id: number): SessionSummary {
 
 /**
  * Overwrites the template the finished session came from with the session's structure: the same
- * exercises, modes and target values (empty sets too), with no logged values or notes. Doesn't
- * touch the workout's name. Exercises deleted since (archived) are left out, since a template can't
- * hold one; with nothing left it fails with `empty_workout`.
+ * exercises, modes, target values (empty sets too) and tactical boards, with no logged values or
+ * notes. Doesn't touch the workout's name. Exercises deleted since (archived) are left out, since a
+ * template can't hold one; with nothing left it fails with `empty_workout`.
  */
 export function overwriteWorkoutFromSession(db: Db, sessionId: number): void {
   db.transaction((tx) => {
@@ -349,6 +370,7 @@ export function overwriteWorkoutFromSession(db: Db, sessionId: number): void {
           exerciseId: exercise.exerciseId,
           targetMode: exercise.targetMode,
           targetValues: exercise.sets.map((set) => set.targetValue),
+          tacticalBoard: exercise.tacticalBoard,
         })),
     );
   });

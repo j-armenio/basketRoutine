@@ -8,6 +8,20 @@
       "when": 1790195750193,
       "tag": "0000_true_deadpool",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1790734096559,
+      "tag": "0001_neat_excalibur",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1790746211144,
+      "tag": "0002_clear_empty_tactical_boards",
+      "breakpoints": true
     }
   ]
 }

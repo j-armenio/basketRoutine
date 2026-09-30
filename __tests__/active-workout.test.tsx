@@ -290,7 +290,7 @@ test('minimize shows the banner on every tab, and it survives an app kill', asyn
   expect(screen.getByText('Workout in progress')).toBeOnTheScreen();
   expect(screen.getByRole('button', { name: 'Resume Workout' })).toBeOnTheScreen();
   expectAccessibleControls();
-  for (const tab of ['Exercises', 'History', 'Workout']) {
+  for (const tab of ['Exercises', 'Profile', 'Workout']) {
     await user.press(screen.getByRole('tab', { name: tab }));
     expect(screen.getByText('Workout in progress')).toBeOnTheScreen();
     expectAccessibleControls();
@@ -366,7 +366,7 @@ test('finish: confirmation, then the summary, then Done', async () => {
   expect(app.getPathname()).toBe('/');
   expect(screen.queryByText('Workout in progress')).toBeNull();
   expect(screen.getByRole('button', { name: 'Start Empty Workout' })).toBeOnTheScreen();
-  await user.press(screen.getByRole('tab', { name: 'History' }));
+  await user.press(screen.getByRole('tab', { name: 'Profile' }));
   expect(screen.getByText('1 workout logged')).toBeOnTheScreen();
 });
 

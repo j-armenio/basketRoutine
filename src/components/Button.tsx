@@ -21,7 +21,13 @@ type Variant =
   /** The dashed green outline (New Workout). */
   | 'dashed'
   /** The green outline (Choose media). */
-  | 'outline';
+  | 'outline'
+  /** The gray outline, a quiet action inside a card (Edit Profile). */
+  | 'bordered'
+  /** Text only, in a header (the tactical board's Cancel). */
+  | 'text'
+  /** A primary button sized for a header (the tactical board's Save). */
+  | 'primaryCompact';
 
 type VariantStyle = {
   container: ViewStyle;
@@ -109,6 +115,36 @@ const variants: Record<Variant, VariantStyle> = {
     textColor: colors.textPrimary,
     text: 'bodySmall',
     weight: 'bold',
+    iconSize: size.iconButtonGlyph,
+  },
+  bordered: {
+    container: {
+      minHeight: size.minTouchTarget,
+      borderRadius: radius.input,
+      borderWidth: border.outline,
+      borderColor: colors.outline,
+    },
+    textColor: colors.textPrimary,
+    text: 'bodySmall',
+    weight: 'bold',
+    iconSize: size.iconSmall,
+  },
+  text: {
+    container: { minHeight: size.minTouchTarget, borderRadius: radius.input },
+    textColor: colors.textPrimary,
+    text: 'body',
+    weight: 'semiBold',
+    iconSize: size.iconButtonGlyph,
+  },
+  primaryCompact: {
+    container: {
+      minHeight: size.minTouchTarget,
+      paddingHorizontal: spacing.xl,
+      borderRadius: radius.input,
+      backgroundColor: colors.primary,
+    },
+    textColor: colors.onPrimary,
+    text: 'button',
     iconSize: size.iconButtonGlyph,
   },
 };

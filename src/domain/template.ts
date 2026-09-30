@@ -1,16 +1,22 @@
+import { sameBoard, type TacticalBoard } from './tacticalBoard';
 import type { TargetMode } from './types';
 
-/** What a template and a session have in common: which exercises, in which order, and their targets. */
+/**
+ * What a template and a session have in common: which exercises, in which order, their targets
+ * and their tactical boards.
+ */
 export interface StructureExercise {
   exerciseId: number;
   targetMode: TargetMode | null;
   sets: { targetValue: number | null }[];
+  tacticalBoard: TacticalBoard | null;
 }
 
 export type TemplateStructure = {
   exerciseId: number;
   targetMode: TargetMode | null;
   targetValues: (number | null)[];
+  tacticalBoard: TacticalBoard | null;
 }[];
 
 function structureOf(exercises: readonly StructureExercise[]): TemplateStructure {
@@ -18,10 +24,11 @@ function structureOf(exercises: readonly StructureExercise[]): TemplateStructure
     exerciseId: exercise.exerciseId,
     targetMode: exercise.targetMode,
     targetValues: exercise.sets.map((set) => set.targetValue),
+    tacticalBoard: exercise.tacticalBoard,
   }));
 }
 
-/** The workout's ordered exercises with their target values. */
+/** The workout's ordered exercises with their target values and boards. */
 export function structureFromTemplate(workout: {
   exercises: readonly StructureExercise[];
 }): TemplateStructure {
@@ -44,7 +51,8 @@ export function sameStructure(a: TemplateStructure, b: TemplateStructure): boole
         exercise.exerciseId === other.exerciseId &&
         exercise.targetMode === other.targetMode &&
         exercise.targetValues.length === other.targetValues.length &&
-        exercise.targetValues.every((value, j) => value === other.targetValues[j])
+        exercise.targetValues.every((value, j) => value === other.targetValues[j]) &&
+        sameBoard(exercise.tacticalBoard, other.tacticalBoard)
       );
     })
   );

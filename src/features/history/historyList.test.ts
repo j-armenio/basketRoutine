@@ -1,11 +1,17 @@
 import type { SessionSummary } from '@/domain/summary';
 import {
   chartDateLabels,
+  chartRangeCount,
+  chartRangeLabel,
+  chartRangeShortLabel,
   fgEvolution,
   fgEvolutionLabel,
   groupByMonth,
+  profileStats,
   sessionResult,
+  spreadLabels,
   toHistoryItem,
+  trendLabel,
   type HistoryItem,
 } from './historyList';
 
@@ -127,6 +133,80 @@ describe('sessionResult', () => {
   });
 });
 
+describe('profileStats', () => {
+  // newest first, like the History: session `id` started on Sep `id`
+  const session = (id: number, makes: number, attempts: number, minutes = 0): HistoryItem => ({
+    ...item(id, new Date(2026, 8, id)),
+    durationMs: minutes * 60_000,
+    summary: summary({ makes, attempts }, { completed: 1, total: 1 }),
+  });
+
+  test('counts the sessions and adds up the shots and the time', () => {
+    const stats = profileStats([session(2, 5, 14, 65), session(1, 7, 10, 42)]);
+    expect(stats.sessions).toBe(2);
+    expect(stats.shooting.makes).toBe(12);
+    expect(stats.shooting.attempts).toBe(24);
+    expect(stats.durationMs).toBe(107 * 60_000);
+  });
+
+  test('the FG% is Σmakes / Σattempts, not the average of the sessions', () => {
+    // 70% and 35.7%: their average would be 52.9%
+    expect(profileStats([session(2, 5, 14), session(1, 7, 10)]).shooting.fgPct).toBe(0.5);
+  });
+
+  test('sessions with no shot count as sessions only; with none, no FG%', () => {
+    const stats = profileStats([session(2, 3, 4), session(1, 0, 0)]);
+    expect(stats.sessions).toBe(2);
+    expect(stats.shooting.fgPct).toBe(0.75);
+    expect(profileStats([session(1, 0, 0)]).shooting.fgPct).toBeNull();
+    expect(profileStats([])).toEqual({
+      sessions: 0,
+      shooting: { makes: 0, attempts: 0, fgPct: null },
+      durationMs: 0,
+      trend: null,
+    });
+  });
+
+  describe('the trend', () => {
+    /** Sessions newest first, each logging `makes[i]` of 10. */
+    const sessions = (makes: number[]) =>
+      makes.map((m, index) => session(makes.length - index, m, 10));
+
+    test('is the last 5 sessions with a shot minus the 5 before, in points', () => {
+      // 6 + 7 + 5 + 6 + 6 = 30 / 50 = 60%; 5 + 4 + 5 + 4 + 5 = 23 / 50 = 46%
+      expect(profileStats(sessions([6, 7, 5, 6, 6, 5, 4, 5, 4, 5])).trend).toBe(14);
+      expect(profileStats(sessions([5, 4, 5, 4, 5, 6, 7, 5, 6, 6])).trend).toBe(-14);
+      // older sessions are left out
+      expect(profileStats(sessions([5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 0])).trend).toBe(0);
+    });
+
+    test('differs as the rounded percents shown do', () => {
+      // 5 / 15 = 33.3% and 5 / 35 = 14.3%: 19 points, not 19.05
+      const recent = [10, 9, 8, 7, 6].map((id) => session(id, 1, 3));
+      const previous = [5, 4, 3, 2, 1].map((id) => session(id, 1, 7));
+      expect(profileStats([...recent, ...previous]).trend).toBe(19);
+    });
+
+    test('is null until there are 10 sessions with a shot', () => {
+      expect(profileStats(sessions([5, 5, 5, 5, 5, 5, 5, 5, 5])).trend).toBeNull();
+      // a check-only session doesn't count toward the 10
+      expect(
+        profileStats([...sessions([5, 5, 5, 5, 5, 5, 5, 5, 5]), session(0, 0, 0)]).trend,
+      ).toBeNull();
+    });
+  });
+});
+
+describe('trendLabel', () => {
+  test('says the points and the direction', () => {
+    expect(trendLabel(4.2)).toEqual({ text: '4.2 pts', direction: 'up' });
+    expect(trendLabel(-10)).toEqual({ text: '10 pts', direction: 'down' });
+    expect(trendLabel(1)).toEqual({ text: '1 pt', direction: 'up' });
+    expect(trendLabel(-0.5)).toEqual({ text: '0.5 pts', direction: 'down' });
+    expect(trendLabel(0)).toEqual({ text: 'No change', direction: 'flat' });
+  });
+});
+
 describe('groupByMonth', () => {
   test('groups by month in list order', () => {
     const sections = groupByMonth([
@@ -205,5 +285,66 @@ describe('fgEvolution', () => {
     expect(fgEvolutionLabel(points.slice(1))).toBe(
       'FG% over the last workout: Sep 28 Workout 2 33.3%',
     );
+    expect(fgEvolutionLabel(points, true)).toBe(
+      'FG% over all 2 workouts: Sep 25 Workout 1 70%, Sep 28 Workout 2 33.3%',
+    );
+  });
+
+  test('all of them: every session with a shooting set', () => {
+    const items = Array.from({ length: 30 }, (_, i) => shot(30 - i, 1 + (i % 28), 1, 2));
+
+    expect(fgEvolution(items, chartRangeCount('all'))).toHaveLength(30);
+    expect(fgEvolution(items, chartRangeCount(20))).toHaveLength(20);
+  });
+
+  test('beyond 10 points, the screen reader label sums up the range', () => {
+    // 12 sessions, Sep 1 to Sep 12, newest first: 1/4 each, the best 9/10 on Sep 6, 1/2 latest
+    const items = Array.from({ length: 12 }, (_, i) => {
+      const day = 12 - i;
+      if (day === 12) return shot(day, day, 1, 2);
+      if (day === 6) return shot(day, day, 9, 10);
+      return shot(day, day, 1, 4);
+    });
+    const points = fgEvolution(items, chartRangeCount('all'));
+
+    expect(fgEvolutionLabel(points, true)).toBe(
+      'FG% over all 12 workouts, from Sep 1 to Sep 12: first 25%, best 90%, latest 50%',
+    );
+    expect(fgEvolutionLabel(points.slice(1))).toBe(
+      'FG% over the last 11 workouts, from Sep 2 to Sep 12: first 25%, best 90%, latest 50%',
+    );
+  });
+});
+
+describe('the chart range', () => {
+  test('5, 10, 20 or all, with the menu and button texts', () => {
+    expect(chartRangeLabel(5)).toBe('Last 5 workouts');
+    expect(chartRangeLabel('all')).toBe('All workouts');
+    expect(chartRangeShortLabel(20)).toBe('Last 20');
+    expect(chartRangeShortLabel('all')).toBe('All');
+    expect(chartRangeCount(10)).toBe(10);
+    expect(chartRangeCount('all')).toBe(Infinity);
+  });
+});
+
+describe('spreadLabels', () => {
+  const at = (...centers: number[]) => spreadLabels(centers, (center) => center, 64);
+
+  test('keeps every label that fits', () => {
+    expect(at(50, 120, 190, 260)).toEqual([50, 120, 190, 260]);
+  });
+
+  test('skips the ones too close to the previous kept one or to the last', () => {
+    expect(at(50, 80, 110, 140, 170, 200, 230, 260)).toEqual([50, 140, 260]);
+    expect(at(50, 150, 220, 250)).toEqual([50, 150, 250]);
+  });
+
+  test('keeps the last alone when even the first is too close to it', () => {
+    expect(at(200, 240)).toEqual([240]);
+  });
+
+  test('one label or none', () => {
+    expect(at(120)).toEqual([120]);
+    expect(at()).toEqual([]);
   });
 });

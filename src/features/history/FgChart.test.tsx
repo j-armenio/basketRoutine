@@ -26,3 +26,19 @@ test('draws once it knows its width: the axis, the latest value and one date per
     'FG% over the last 3 workouts: Sep 25 Workout 1 68.9%, Sep 25 Workout 2 9%, Sep 28 Workout 3 50.7%',
   );
 });
+
+test('with many points, only the dates that fit side by side are written', async () => {
+  // 20 sessions, Sep 1 to Sep 20
+  const points = Array.from({ length: 20 }, (_, i) => point(i + 1, i + 1, 0.5));
+  await render(<FgChart points={points} all />);
+  const chart = screen.getByRole('image');
+
+  await fireEvent(chart, 'layout', { nativeEvent: { layout: { width: 318, height: 150 } } });
+
+  // the plot is 248 dp wide (a point every 13 dp) and a date needs 64: every fifth one fits
+  const dates = screen.getAllByText(/^Sep \d+$/).map((text) => text.props.children);
+  expect(dates).toEqual(['Sep 1', 'Sep 6', 'Sep 11', 'Sep 20']);
+  expect(chart.props.accessibilityLabel).toMatch(
+    /^FG% over all 20 workouts, from Sep 1 to Sep 20:/,
+  );
+});

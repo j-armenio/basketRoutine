@@ -6,11 +6,10 @@ import { NameDialog } from '@/components/NameDialog';
 import { Screen } from '@/components/Screen';
 import type { RoutineWithWorkouts } from '@/db/repositories/routines';
 import { reasonMessage } from '@/domain/messages';
-import { moveItem } from '@/domain/order';
 import { spacing } from '@/theme/spacing';
-import { createRoutine, moveRoutine, renameRoutine } from '@/features/routines/actions';
+import { createRoutine, renameRoutine } from '@/features/routines/actions';
+import { DraggableRoutineList } from '@/features/routines/DraggableRoutineList';
 import { useRoutines } from '@/features/routines/hooks';
-import { RoutineSection } from '@/features/routines/RoutineSection';
 import {
   discardAndStartFromTemplate,
   startEmptyWorkout,
@@ -73,8 +72,6 @@ export default function WorkoutScreen() {
     if (!result.ok) Alert.alert("Couldn't save routine", reasonMessage(result.reason));
   };
 
-  const routineIds = routines.map((routine) => routine.id);
-
   return (
     <Screen title="Workout">
       <Card style={styles.quickStart}>
@@ -110,28 +107,22 @@ export default function WorkoutScreen() {
           action={{ label: 'New Routine', onPress: () => setDialog({ kind: 'new' }) }}
         />
       ) : (
-        routines.map((routine, index) => (
-          <RoutineSection
-            key={routine.id}
-            routine={routine}
-            index={index}
-            count={routines.length}
-            onRename={() => setDialog({ kind: 'rename', routine })}
-            onMove={(delta) => moveRoutine(moveItem(routineIds, index, delta))}
-            onNewWorkout={() =>
-              router.push({ pathname: '/edit-workout', params: { routineId: routine.id } })
-            }
-            onEditWorkout={(workoutId) =>
-              router.push({ pathname: '/edit-workout', params: { workoutId } })
-            }
-            onStartWorkout={(workoutId) =>
-              startTemplate(
-                workoutId,
-                routine.workouts.find((workout) => workout.id === workoutId)?.name ?? '',
-              )
-            }
-          />
-        ))
+        <DraggableRoutineList
+          routines={routines}
+          onRename={(routine) => setDialog({ kind: 'rename', routine })}
+          onNewWorkout={(routine) =>
+            router.push({ pathname: '/edit-workout', params: { routineId: routine.id } })
+          }
+          onEditWorkout={(workoutId) =>
+            router.push({ pathname: '/edit-workout', params: { workoutId } })
+          }
+          onStartWorkout={(routine, workoutId) =>
+            startTemplate(
+              workoutId,
+              routine.workouts.find((workout) => workout.id === workoutId)?.name ?? '',
+            )
+          }
+        />
       )}
       <NameDialog
         visible={dialog !== null}

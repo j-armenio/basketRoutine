@@ -39,6 +39,18 @@ export const colors = {
   error: '#FF9580',
   /** FG% from 40 to 60%. */
   neutralStat: '#C4C6D0',
+  /** The tactical board's court: the floor, its outline, the paint, the three-point area. */
+  court: '#2B5840',
+  courtFrame: '#3E7258',
+  courtPaint: '#24503A',
+  courtArc: '#2D5B44',
+  /** The court's lines. */
+  courtLine: '#A8D5BA',
+  /** Under every mark on the board, so it stands out from the lines. X marks and arrows use
+   *  `textPrimary`, pen strokes `primary`. */
+  boardHalo: 'rgba(16, 36, 26, 0.85)',
+  /** Behind the thumbnail's expand icon. */
+  boardBadge: 'rgba(18, 18, 21, 0.7)',
   /** Behind modals (dialogs, action sheets). Not a text color. */
   scrim: 'rgba(0, 0, 0, 0.6)',
 };

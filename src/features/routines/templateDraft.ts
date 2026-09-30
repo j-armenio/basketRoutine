@@ -1,5 +1,6 @@
 import { DEFAULT_TARGET_VALUE } from '@/domain/defaults';
 import { moveItem } from '@/domain/order';
+import type { TacticalBoard } from '@/domain/tacticalBoard';
 import { sameStructure, structureFromTemplate } from '@/domain/template';
 import type { TargetMode, TrackingType } from '@/domain/types';
 import type { SaveWorkoutInput } from '@/db/repositories/workouts';
@@ -17,6 +18,7 @@ export interface DraftExercise {
   trackingType: TrackingType;
   targetMode: TargetMode | null;
   sets: DraftSet[];
+  tacticalBoard: TacticalBoard | null;
 }
 
 /** A workout template as the editor holds it, in memory, until Save. */
@@ -45,6 +47,7 @@ interface WorkoutForDraft {
     targetMode: TargetMode | null;
     exercise: { name: string; trackingType: TrackingType };
     sets: { targetValue: number | null }[];
+    tacticalBoard: TacticalBoard | null;
   }[];
 }
 
@@ -60,6 +63,7 @@ export function draftFromWorkout(workout: WorkoutForDraft): TemplateDraft {
       trackingType: item.exercise.trackingType,
       targetMode: item.targetMode,
       sets: item.sets.map((set) => ({ key: nextKey(), targetValue: set.targetValue })),
+      tacticalBoard: item.tacticalBoard,
     })),
   };
 }
@@ -99,6 +103,7 @@ export function addExercise(
         targetValue: targetMode === null ? null : DEFAULT_TARGET_VALUE[targetMode],
       },
     ],
+    tacticalBoard: null,
   };
   return { ...draft, exercises: [...draft.exercises, added] };
 }
@@ -149,6 +154,15 @@ export function setTarget(
   }));
 }
 
+/** Sets or (with `null`) removes the exercise's tactical board. */
+export function setBoard(
+  draft: TemplateDraft,
+  exerciseKey: string,
+  tacticalBoard: TacticalBoard | null,
+): TemplateDraft {
+  return updateExercise(draft, exerciseKey, (exercise) => ({ ...exercise, tacticalBoard }));
+}
+
 export function toSaveInput(draft: TemplateDraft): SaveWorkoutInput {
   return {
     workoutId: draft.workoutId,
@@ -158,6 +172,7 @@ export function toSaveInput(draft: TemplateDraft): SaveWorkoutInput {
       exerciseId: exercise.exerciseId,
       targetMode: exercise.targetMode,
       targetValues: exercise.sets.map((set) => set.targetValue),
+      tacticalBoard: exercise.tacticalBoard,
     })),
   };
 }
@@ -168,6 +183,7 @@ function structureOf(draft: TemplateDraft) {
       exerciseId: exercise.exerciseId,
       targetMode: exercise.targetMode,
       sets: exercise.sets,
+      tacticalBoard: exercise.tacticalBoard,
     })),
   });
 }
