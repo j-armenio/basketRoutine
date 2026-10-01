@@ -11,7 +11,6 @@ import {
   sessionResult,
   spreadLabels,
   toHistoryItem,
-  trendLabel,
   type HistoryItem,
 } from './historyList';
 
@@ -163,47 +162,7 @@ describe('profileStats', () => {
       sessions: 0,
       shooting: { makes: 0, attempts: 0, fgPct: null },
       durationMs: 0,
-      trend: null,
     });
-  });
-
-  describe('the trend', () => {
-    /** Sessions newest first, each logging `makes[i]` of 10. */
-    const sessions = (makes: number[]) =>
-      makes.map((m, index) => session(makes.length - index, m, 10));
-
-    test('is the last 5 sessions with a shot minus the 5 before, in points', () => {
-      // 6 + 7 + 5 + 6 + 6 = 30 / 50 = 60%; 5 + 4 + 5 + 4 + 5 = 23 / 50 = 46%
-      expect(profileStats(sessions([6, 7, 5, 6, 6, 5, 4, 5, 4, 5])).trend).toBe(14);
-      expect(profileStats(sessions([5, 4, 5, 4, 5, 6, 7, 5, 6, 6])).trend).toBe(-14);
-      // older sessions are left out
-      expect(profileStats(sessions([5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 0])).trend).toBe(0);
-    });
-
-    test('differs as the rounded percents shown do', () => {
-      // 5 / 15 = 33.3% and 5 / 35 = 14.3%: 19 points, not 19.05
-      const recent = [10, 9, 8, 7, 6].map((id) => session(id, 1, 3));
-      const previous = [5, 4, 3, 2, 1].map((id) => session(id, 1, 7));
-      expect(profileStats([...recent, ...previous]).trend).toBe(19);
-    });
-
-    test('is null until there are 10 sessions with a shot', () => {
-      expect(profileStats(sessions([5, 5, 5, 5, 5, 5, 5, 5, 5])).trend).toBeNull();
-      // a check-only session doesn't count toward the 10
-      expect(
-        profileStats([...sessions([5, 5, 5, 5, 5, 5, 5, 5, 5]), session(0, 0, 0)]).trend,
-      ).toBeNull();
-    });
-  });
-});
-
-describe('trendLabel', () => {
-  test('says the points and the direction', () => {
-    expect(trendLabel(4.2)).toEqual({ text: '4.2 pts', direction: 'up' });
-    expect(trendLabel(-10)).toEqual({ text: '10 pts', direction: 'down' });
-    expect(trendLabel(1)).toEqual({ text: '1 pt', direction: 'up' });
-    expect(trendLabel(-0.5)).toEqual({ text: '0.5 pts', direction: 'down' });
-    expect(trendLabel(0)).toEqual({ text: 'No change', direction: 'flat' });
   });
 });
 

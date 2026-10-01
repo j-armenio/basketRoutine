@@ -19,6 +19,9 @@ Detailed plan for Phase 9 of [PLAN.md](PLAN.md).
 | 7 | Exercises | Dashed green ring around the green `+` (New Workout's border) | Approved on the phone |
 | 8 | Profile | The History tab becomes Profile (mockup `Profile-html`): the profile card (photo, name, Edit Profile), Your stats (Sessions, AVG FG%, shots, time trained, FG% trend), the FG% chart, the last 5 sessions with "See all" | Done, to check on the phone |
 | 9 | Workout | Tactical board: an optional half court per workout exercise, where the coach draws X marks, arrows and free lines (mockup `active-workout-tactical-board`) | Done, to check on the phone |
+| 10 | Profile | No "N workouts logged" on the profile card, no FG% trend in Your stats; a Settings button at the top right opens a Settings page, empty for now | Done, to check on the phone |
+| 11 | Workout | Keep the screen awake while the active workout is open | Done, to check on the phone |
+| 12 | Settings | The app version shown at the bottom of the Settings page | Done, to check on the phone |
 
 ## Decisions
 
@@ -29,7 +32,7 @@ Detailed plan for Phase 9 of [PLAN.md](PLAN.md).
 5. **Predefined note:** removed; the missing ⋮ menu still marks a predefined exercise as read-only.
 6. **Chart range:** a "Last 5 ▾" button opens a menu (Last 5 / 10 / 20 / All workouts). It starts at 5 and lasts while the app is open (not saved). With many points, the dates are thinned so they don't overlap, the dots are drawn only when they fit, and the screen-reader label sums up beyond 10 points.
 
-7. **Profile:** the third tab is Profile (`person` icon, `app/(tabs)/profile.tsx`). From the top: the profile card (80 dp avatar, the name or "Player", "N workouts logged", Edit Profile in a gray outline, `Button` `bordered`), Your stats (Sessions, the finished sessions, and AVG FG% = Σmakes / Σattempts over every one of them, colored by its band, `—` with no shooting set; then Shots made, Σmakes / Σattempts, and Time trained, the durations added up; then the FG% trend: the last 5 sessions with a shot against the 5 before, in points between the two percents shown, with an arrow, `—` until there are 10 such sessions), the FG% evolution card, then "History" with the last 5 sessions by month. "See all" (only beyond 5) opens `app/history.tsx`, the full list by month. With no session, an empty state under the profile card.
+7. **Profile:** the third tab is Profile (`person` icon, `app/(tabs)/profile.tsx`). From the top: the profile card (80 dp avatar, the name or "Player", Edit Profile in a gray outline, `Button` `bordered`), Your stats (Sessions, the finished sessions, and AVG FG% = Σmakes / Σattempts over every one of them, colored by its band, `—` with no shooting set; then Shots made, Σmakes / Σattempts, and Time trained, the durations added up), the FG% evolution card, then "History" with the last 5 sessions by month. "See all" (only beyond 5) opens `app/history.tsx`, the full list by month. With no session, an empty state under the profile card.
 8. **Edit Profile** (`app/edit-profile.tsx`, no mockup): the photo (120 dp avatar, Choose / Change / Remove photo, images only, square crop in the picker) and the name, saved together by Save Profile; Cancel changes nothing. Without a photo the avatar shows the name's initial on green, a person icon with no name. The avatar on the profile card opens it too. The name and the photo URI sit in `expo-sqlite/kv-store` (its own file, part of `expo-sqlite`: no install, no schema change); the photo is copied into `<documents>/profile-photo/` like an exercise's media, and the old file is deleted when it is replaced or removed.
 9. **Tactical board** (mockup `active-workout-tactical-board`, without its Line and Color rows, and with a FIBA half court instead of the mockup's NBA one):
    - **Where:** each exercise of a workout template and of an active workout can have one board. None is created on its own: the card's header shows an `assignment_add` icon between the name and ⋮ until there is one; once saved, a read-only thumbnail of the whole half court takes its place, and tapping it opens the editor. The ⋮ menu gets "Remove tactical board" (only with a board), confirmed. The History detail shows the session's board read-only (the summary after Finish has no exercise cards, so no board). A board is never empty: Save is disabled with nothing drawn, and the only way to take a board off an exercise is Remove.
@@ -37,6 +40,9 @@ Detailed plan for Phase 9 of [PLAN.md](PLAN.md).
    - **Persistence, like the rest of a session:** starting a workout copies the template's board into the session exercise; an edit during the workout is saved on the session exercise at once; at Finish, a changed board counts as a structure change, so the existing "Update template?" question carries it back. In the template editor, the board is part of the draft and is written by the editor's Save.
    - **Rendering:** one component, `CourtBoard` (`react-native-svg`), for the thumbnail, the editor and History: `viewBox` in meters (15 x 14), the strokes' widths in dp converted to viewBox units, every mark drawn over a dark halo. X marks and arrows in white, pen strokes in pink (fixed colors: picking colors is out of scope). A curved arrow is a quadratic Bézier through its `via` point; the Hand tool's selected arrow shows a small square handle there.
    - **Editor** (`app/tactical-board.tsx`, full screen, `?sessionExerciseId=` or `?draftKey=`): Cancel, "Tactical board", Save (disabled with nothing drawn) on top; the court centered in the screen's width; the toolbar at the bottom, in two rows: Undo and Clear (confirmed) above, right-aligned; Hand, X, Arrow, Pen, Eraser below (one selected, in pink). X places a mark where tapped; Arrow goes from where the finger lands to where it lifts, with a live preview, and short ones (a slip) are dropped; Pen draws a smoothed line; Hand touches an existing mark to select and drag it (clamped to the court), or, on a selected arrow, drags its handle to bend it; Eraser removes whatever it touches, sampling the drag so a fast swipe doesn't skip a mark. Every change — a new mark, a move, a curve, an erase, a Clear — is one `undo` step. The gestures come from gesture-handler (a one-finger pan on the court only); the screen doesn't scroll. Cancel, back button or back gesture with unsaved changes asks before discarding.
+10. **Profile cleanup and Settings:** the profile card shows only the photo, the name and Edit Profile (the count was already the Sessions tile). The FG% trend row is gone from Your stats, with its calculation (`trend`, `TREND_WINDOW`, `trendLabel`). A Settings button (`settings` icon, `IconButton` in the `Screen`'s `right` slot) sits right of the "Profile" title and opens `app/settings.tsx`: Back, `titleLarge`, and an empty state ("No settings yet") until settings are added.
+11. **Keep awake:** `useKeepAwake()` (`expo-keep-awake`) called at the top of `app/active-workout.tsx`, tied to the screen's own lifetime — no tag, no feature flag. It activates on mount and releases automatically on unmount, so Minimize, Finish and Discard (which all leave the screen) turn it off without any extra code; no other screen holds the lock.
+12. **App version:** `app/settings.tsx` reads `expo.version` from `app.json` (a plain JSON import, like `src/db/migrations/migrations.js`'s journal, so no native module and no mock needed in tests) and shows "Basket Routine {version}" as a small caption under the empty state.
 
 ## Tools
 
@@ -44,16 +50,31 @@ Detailed plan for Phase 9 of [PLAN.md](PLAN.md).
 
 `react-native-svg` (item 9), installed with approval through `npx expo install` (already in Expo Go).
 
+`expo-keep-awake` (item 11), installed with approval through `npx expo install`.
+
 ## Checks (2026-09-29)
 
 - `lint`, `format:check`, `typecheck`, `test` (572 tests, 550 before) pass; `db:generate`: no change.
 - After item 8: the same list passes (584 tests); `db:generate`: no change.
 - After item 9: the same list passes (658 tests); `db:generate` made `0001_neat_excalibur.sql` (two `ADD COLUMN`s, `0000` untouched), then no change; `expo-doctor` fails only on the same patch versions.
 - After the phone check's feedback on item 9 (Hand, curved arrows, Eraser, a centered editor, the header's ⊞ icon, no empty board): the same list passes (693 tests); `db:generate` made the custom `0002_clear_empty_tactical_boards.sql` (a data-only migration, no column), then no change; `expo-doctor` still fails only on the same patch versions.
+- After item 10 (2026-09-30): `lint`, `format:check`, `typecheck`, `test` pass (689 tests: the FG% trend's 5 tests removed, 1 added for Settings); `db:generate`: no change.
+- After items 11-12 (2026-09-30): the same list passes (689 tests; the Settings test gained an assertion for the version line, no new test); `db:generate`: no change.
 - `expo-doctor`: fails only on new Expo patch versions (`expo`, `expo-constants`, `expo-router`), unrelated to this phase; updated at the phase close (see below).
+- Phase close (2026-09-30): `npx expo install --fix` (`expo` 57.0.25 → 57.0.26, `expo-constants` 57.0.19 → 57.0.20, `expo-router` 57.0.23 → 57.0.24); `expo-doctor` then 21/21. `lint`, `format:check`, `typecheck`, `test` (689 tests) and `db:generate` (no change) all still pass after the bump.
 
-## Still to do
+## Final checklist
 
-- Phase close:
-  1. Expo patch updates (decided 2026-09-29: update at the close, not mid-phase): `npx expo install --fix` as its own step, then the tests and a quick phone check, so a break points to the update. Needed because CI runs `expo-doctor`, which fails on outdated patches.
-  2. `docs/design.md`, `CLAUDE.md`, full CI list, commit "Phase 9: refinement" (with the `PLAN.md` change), CI green.
+- [x] Items 1-7 approved on the phone (Expo Go).
+- [x] Items 8-12 built and covered by tests; **on-phone check still pending** — a new `preview` APK (the first since Phase 5's, so the first to carry Phases 6-9 together) is being built for it.
+- [x] `npx expo install --fix` applied; `npx expo-doctor` 21/21.
+- [x] `npm run lint`, `format:check`, `typecheck`, `test` pass locally (689 tests), and `db:generate` leaves the migrations unchanged.
+- [x] Commit "Phase 9: refinement" made before the on-phone check, at the developer's request (as in Phase 7).
+- [ ] CI green on `main`.
+- [ ] On-phone check for items 8-12 (Profile tab, Edit Profile, tactical board, keep awake, Settings) passed, feedback (if any) applied.
+
+## Results
+
+**Phase 9 code done** (2026-09-30); the commit was made before the on-phone check, at the developer's request, like Phase 7. All CI checks pass locally: lint, format, typecheck, 689 tests (550 before this phase), `db:generate` with no schema change since migration `0002`, `expo-doctor` 21/21 after `npx expo install --fix`.
+
+Items 1-7 were approved on the phone during the phase (Expo Go). Items 8-12 (Profile tab and Edit Profile, the tactical board, drag-to-reorder, Profile/Settings cleanup, keep awake and the app version) are code-complete and tested, but not yet checked on a real device: every check so far ran in Expo Go, and the APK installed on the phone still only has Phase 5's code. A new `preview` APK was built right after this commit so items 8-12 — and the Phase 6-8 work already checked only in Expo Go (gallery media, the redesign, the final logo) — get their first real-device check together. Feedback from that check, once it happens, goes here before Phase 9 is marked fully done.

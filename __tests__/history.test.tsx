@@ -1,3 +1,4 @@
+import appConfig from '../app.json';
 import { createRoutine } from '@/db/repositories/routines';
 import * as sessionRepo from '@/db/repositories/sessions';
 import {
@@ -216,7 +217,7 @@ describe('the history on the Profile tab', () => {
     await user.press(profileTab());
 
     expect(screen.getByText('No workouts yet')).toBeOnTheScreen();
-    expect(screen.getByText('No workouts logged yet')).toBeOnTheScreen();
+    expect(screen.queryByText(/workouts? logged/)).toBeNull();
     expect(screen.queryByRole('header', { name: 'Your stats' })).toBeNull();
     expect(screen.queryByRole('header', { name: 'History' })).toBeNull();
     expectAccessibleControls();
@@ -232,7 +233,7 @@ describe('the history on the Profile tab', () => {
 
     await user.press(profileTab());
 
-    expect(screen.getByText('3 workouts logged')).toBeOnTheScreen();
+    expect(screen.getByTestId('stat-sessions')).toHaveTextContent('3');
     expect(screen.queryByRole('button', { name: /^Still going, / })).toBeNull();
     const months = screen
       .getAllByRole('header', { name: /^(September|August) 2026$/ })
@@ -335,7 +336,7 @@ describe('the history on the Profile tab', () => {
 
     await user.press(profileTab());
 
-    expect(screen.getByText('1 workout logged')).toBeOnTheScreen();
+    expect(screen.getByTestId('stat-sessions')).toHaveTextContent('1');
     expect(screen.queryByRole('header', { name: 'FG% evolution' })).toBeNull();
     // the sessions still count; no FG% to show
     expect(screen.getByTestId('stat-sessions')).toHaveTextContent('1');
@@ -343,7 +344,7 @@ describe('the history on the Profile tab', () => {
     expect(screen.getByTestId('avg-fg')).toHaveStyle({ color: colors.textSecondary });
   });
 
-  test('the count is singular for one workout', async () => {
+  test('the profile card shows no workout count; Your stats has it', async () => {
     const template = seedTemplate();
     const session = startSessionFromWorkout(db, template.id);
     logAndFinish(
@@ -357,7 +358,8 @@ describe('the history on the Profile tab', () => {
 
     await user.press(profileTab());
 
-    expect(screen.getByText('1 workout logged')).toBeOnTheScreen();
+    expect(screen.queryByText(/workouts? logged/)).toBeNull();
+    expect(screen.getByTestId('stat-sessions')).toHaveTextContent('1');
   });
 });
 
@@ -381,27 +383,8 @@ describe('Your stats', () => {
     // 42 + 65 + 20 min
     expect(screen.getByText('Time trained')).toBeOnTheScreen();
     expect(screen.getByTestId('stat-time')).toHaveTextContent('2 h 07 min');
-    // two workouts with shots: not enough for a trend
-    expect(screen.getByTestId('stat-trend')).toHaveTextContent('—');
-    expect(
-      screen.getByLabelText('FG% trend, not enough workouts yet. After 10 workouts with shots'),
-    ).toBeOnTheScreen();
+    expect(screen.queryByText('FG% trend')).toBeNull();
     expectAccessibleControls();
-  });
-
-  test('the FG% trend compares the last 5 workouts with shots with the 5 before', async () => {
-    // Sep 12 to 8: 2 + 1 + 0 + 9 + 8 = 20 / 50, 40%; Sep 7 to 3: 7 + 6 + 5 + 4 + 3 = 25 / 50, 50%
-    seedDays(12);
-    await launch();
-    const user = setupUser();
-
-    await user.press(profileTab());
-
-    expect(screen.getByTestId('stat-trend')).toHaveTextContent('10 pts');
-    expect(screen.getByTestId('stat-trend')).toHaveStyle({ color: colors.error });
-    expect(
-      screen.getByLabelText('FG% trend, down 10 points. Last 5 vs previous 5 workouts'),
-    ).toBeOnTheScreen();
   });
 });
 
@@ -481,7 +464,7 @@ describe('the profile', () => {
 
     expect(screen.getByRole('header', { name: 'Profile' })).toBeOnTheScreen();
     expect(screen.getByText('Player')).toBeOnTheScreen();
-    expect(screen.getByText('3 workouts logged')).toBeOnTheScreen();
+    expect(screen.queryByText(/workouts? logged/)).toBeNull();
     expect(avatarPhoto()).toBeNull();
     expectAccessibleControls();
 
@@ -557,6 +540,25 @@ describe('the profile', () => {
     );
     expect(avatarPhoto()).toBeNull();
     expect(screen.queryByRole('button', { name: 'Remove photo' })).toBeNull();
+  });
+
+  test('the Settings button opens Settings, empty for now; Back returns', async () => {
+    const app = await launch();
+    const user = setupUser();
+    await user.press(profileTab());
+    expectAccessibleControls();
+
+    await user.press(screen.getByRole('button', { name: 'Settings' }));
+
+    expect(app.getPathname()).toBe('/settings');
+    expect(screen.getByRole('header', { name: 'Settings' })).toBeOnTheScreen();
+    expect(screen.getByText('No settings yet')).toBeOnTheScreen();
+    expect(screen.getByText(`Basket Routine ${appConfig.expo.version}`)).toBeOnTheScreen();
+    expectAccessibleControls();
+
+    await user.press(screen.getByRole('button', { name: 'Back' }));
+
+    expect(app.getPathname()).toBe('/profile');
   });
 });
 
@@ -664,7 +666,7 @@ describe('deleting a session', () => {
     expect(app.getPathname()).toBe('/profile');
     expect(screen.queryByRole('button', { name: MORNING })).toBeNull();
     expect(screen.queryByText('Workout not found')).toBeNull();
-    expect(screen.getByText('2 workouts logged')).toBeOnTheScreen();
+    expect(screen.getByTestId('stat-sessions')).toHaveTextContent('2');
     expect(screen.queryByText('September 2026')).toBeNull();
     expect(getSessionDetail(db, morning.id)).toBeUndefined();
     // its exercises and sets went with it, the other sessions' stayed
@@ -698,7 +700,7 @@ describe('finishing a workout', () => {
     expect(app.getPathname()).toBe('/');
     await user.press(profileTab());
 
-    expect(screen.getByText('1 workout logged')).toBeOnTheScreen();
+    expect(screen.getByTestId('stat-sessions')).toHaveTextContent('1');
     const row = within(
       screen.getByRole('button', { name: /^Morning Workout, Thu, Sep 24, 2026$/ }),
     );
@@ -727,6 +729,6 @@ describe('finishing a workout', () => {
 
     expect(listSpy).toHaveBeenCalled();
     expect(screen.queryByText('No workouts yet')).toBeNull();
-    expect(screen.getByText('1 workout logged')).toBeOnTheScreen();
+    expect(screen.getByTestId('stat-sessions')).toHaveTextContent('1');
   });
 });

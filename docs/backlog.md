@@ -38,8 +38,21 @@ From `PLAN.md`'s former backlog section and the phases' out-of-scope lists.
 - Reps / time tracking types for non-shooting drills.
 - Shot-zone tracking (court map), shot-type tags (free throws, 3PT).
 - Fine-grained "update template" (a diff instead of the full overwrite).
-- Drag & drop reordering (routines, workouts and template exercises move with Move up / Move down
-  now).
-- JSON export / import backup.
+- Drag & drop reordering for what still only has Move up / Move down: the workouts inside a
+  routine (`WorkoutCard`'s menu). Routines themselves (`DraggableRoutineList`) and a template's
+  exercises (`DraggableExerciseList`) already drag since Phase 9.
+- **JSON export / import backup**, asked for 2026-09-30 after Phase 9's Profile/Settings work: a
+  real APK with months of history is now on the phone, Android Auto Backup (`PLAN.md`'s accepted
+  risk) is a best-effort fallback at most — its default 25 MB quota and its own schedule (wifi,
+  charging, idle) leave it unverified for whether it actually restores the profile photo and
+  exercise media files alongside the SQLite DB, and it never gives someone their own copy of their
+  data — and `app/settings.tsx` is empty and the obvious place to put this. Shape it like an
+  exercise's or the profile's media handling (`copySync` through `expo-file-system`, actions in
+  their own `actions.ts`): "Export backup" writes one JSON file (the DB tables plus the profile
+  name, with the photo and exercise media files either inlined as base64 or referenced by relative
+  path next to it) to `<documents>/backups/`, then hands it off with `expo-sharing`'s `shareAsync`
+  (not installed yet); "Import backup" picks a file with `expo-document-picker` (not installed yet)
+  and replaces the local data in one transaction, confirmed first since it's destructive. Export is
+  the smaller, safer half and could ship alone; import can follow once export is used for a while.
 - Cloud sync / multi-device (would call for stable ids, e.g. UUIDs, instead of the autoincrement
   ones).

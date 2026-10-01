@@ -367,7 +367,7 @@ test('finish: confirmation, then the summary, then Done', async () => {
   expect(screen.queryByText('Workout in progress')).toBeNull();
   expect(screen.getByRole('button', { name: 'Start Empty Workout' })).toBeOnTheScreen();
   await user.press(screen.getByRole('tab', { name: 'Profile' }));
-  expect(screen.getByText('1 workout logged')).toBeOnTheScreen();
+  expect(screen.getByTestId('stat-sessions')).toHaveTextContent('1');
 });
 
 test('a Finish the DB refuses stays on the workout, with no haptic', async () => {

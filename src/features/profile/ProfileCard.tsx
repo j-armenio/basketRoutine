@@ -5,17 +5,15 @@ import { opacity, size, spacing } from '@/theme/spacing';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Avatar } from './Avatar';
 import type { Profile } from './profileStorage';
-import { displayName, workoutsLogged } from './profileText';
+import { displayName } from './profileText';
 
 type ProfileCardProps = {
   profile: Profile;
-  /** Finished workouts. */
-  count: number;
   onEdit: () => void;
 };
 
-/** The top of the Profile tab: the photo, the name, how many workouts, and Edit Profile. */
-export function ProfileCard({ profile, count, onEdit }: ProfileCardProps) {
+/** The top of the Profile tab: the photo, the name, and Edit Profile. */
+export function ProfileCard({ profile, onEdit }: ProfileCardProps) {
   return (
     <Card style={styles.card}>
       <View style={styles.identity}>
@@ -27,14 +25,9 @@ export function ProfileCard({ profile, count, onEdit }: ProfileCardProps) {
         >
           <Avatar name={profile.name} photoUri={profile.photoUri} size={size.avatar} />
         </Pressable>
-        <View style={styles.texts}>
-          <AppText variant="headline" numberOfLines={1}>
-            {displayName(profile.name)}
-          </AppText>
-          <AppText variant="subtitle" tone="secondary">
-            {workoutsLogged(count)}
-          </AppText>
-        </View>
+        <AppText variant="headline" numberOfLines={1} style={styles.name}>
+          {displayName(profile.name)}
+        </AppText>
       </View>
       <Button variant="bordered" icon="edit" label="Edit Profile" onPress={onEdit} />
     </Card>
@@ -50,9 +43,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.lg,
   },
-  texts: {
+  name: {
     flex: 1,
-    gap: spacing.xxs,
   },
   pressed: {
     opacity: opacity.pressed,

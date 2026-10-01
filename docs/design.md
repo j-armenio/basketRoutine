@@ -147,8 +147,9 @@ Material Symbols through `Icon` (the only `expo-symbols` import), always with a 
 | Exercise picker | Like the Exercises tab, with the New Exercise FAB |
 | Exercise detail | Back, `titleLarge`, the media (180 dp, radius 20), the description, the lock note for predefined exercises, Your stats, Add to Routine in the bottom bar |
 | Exercise form | Close, `title`; fields with 14 / 700 labels; media box (200 dp) with Choose media; category and tracking chips wrapping; Save Exercise in the bottom bar |
-| Profile (tab) | The profile card (avatar, name in `headline`, "N workouts logged", Edit Profile `bordered`); Your stats (Sessions and AVG FG% tiles with the values in `statMedium`; Shots made and Time trained tiles; the FG% trend row, `surfaceRaised`: label and caption on the left, an arrow and the points in `headline` on the right, `success` up, `error` down, `neutralStat` for no change); the FG% evolution card; "History" in `headline` with "See all" (`ghost`, beyond 5 sessions); the last 5 sessions under month headers, each a card with name, date · duration, exercises, and the FG% and checks on the right |
+| Profile (tab) | Settings (gear, 48 dp) right of the `display` title; the profile card (avatar, name in `headline`, Edit Profile `bordered`); Your stats (Sessions and AVG FG% tiles with the values in `statMedium`; Shots made and Time trained tiles); the FG% evolution card; "History" in `headline` with "See all" (`ghost`, beyond 5 sessions); the last 5 sessions under month headers, each a card with name, date · duration, exercises, and the FG% and checks on the right |
 | History | Back, `titleLarge`, "N workouts logged"; every session by month, rows as on the Profile tab |
+| Settings | Back, `titleLarge`; an empty state ("No settings yet") until settings are added |
 | Edit Profile | Close, `title`; the photo (120 dp avatar) with Choose / Change photo (`outline`) and Remove photo (`danger`); the name field; Save Profile in the bottom bar |
 | Session detail | Back and trash (48 dp); Shooting and Checks cards; each exercise read-only, with its tactical board when it had one |
 

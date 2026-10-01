@@ -56,9 +56,6 @@ export function sessionResult(summary: SessionSummary): {
   };
 }
 
-/** How many sessions with a shot each side of the Profile's trend compares. */
-export const TREND_WINDOW = 5;
-
 export interface ProfileStats {
   sessions: number;
   /**
@@ -68,12 +65,6 @@ export interface ProfileStats {
   shooting: ShootingTotals;
   /** Every session's duration, added up. */
   durationMs: number;
-  /**
-   * The FG% of the last `TREND_WINDOW` sessions with a shot minus the one of the `TREND_WINDOW`
-   * before them, in percentage points, as the two percents shown (rounded in tenths) differ.
-   * `null` until there are twice `TREND_WINDOW` such sessions.
-   */
-  trend: number | null;
 }
 
 const shootingOf = (items: HistoryItem[]): ShootingTotals => {
@@ -86,33 +77,12 @@ const shootingOf = (items: HistoryItem[]): ShootingTotals => {
   return { makes, attempts, fgPct: fgRatio(makes, attempts) };
 };
 
-/** Percent rounded in tenths, the number `formatFgPct` shows. */
-const shownPercent = (ratio: number) => Math.round(ratio * 1000) / 10;
-
 /** "Your stats" on the Profile, over every finished session (`items`, newest first). */
 export function profileStats(items: HistoryItem[]): ProfileStats {
-  const shot = items.filter((item) => item.summary.shooting.attempts > 0);
-  const recent = shootingOf(shot.slice(0, TREND_WINDOW)).fgPct;
-  const previous = shootingOf(shot.slice(TREND_WINDOW, 2 * TREND_WINDOW)).fgPct;
-  const trend =
-    shot.length < 2 * TREND_WINDOW || recent === null || previous === null
-      ? null
-      : Math.round((shownPercent(recent) - shownPercent(previous)) * 10) / 10;
   return {
     sessions: items.length,
     shooting: shootingOf(items),
     durationMs: items.reduce((total, item) => total + item.durationMs, 0),
-    trend,
-  };
-}
-
-/** The trend's words: "4.2 pts" up, "1 pt" down, or "No change". */
-export function trendLabel(points: number): { text: string; direction: 'up' | 'down' | 'flat' } {
-  if (points === 0) return { text: 'No change', direction: 'flat' };
-  const size = Math.abs(points);
-  return {
-    text: `${size % 1 === 0 ? size : size.toFixed(1)} ${size === 1 ? 'pt' : 'pts'}`,
-    direction: points > 0 ? 'up' : 'down',
   };
 }
 

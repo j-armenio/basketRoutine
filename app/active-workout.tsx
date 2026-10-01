@@ -19,6 +19,7 @@ import { reasonMessage } from '@/domain/messages';
 import { moveItem } from '@/domain/order';
 import { countEmptySets, hasLoggedData, summarizeSession } from '@/domain/summary';
 import { Redirect, useRouter } from 'expo-router';
+import { useKeepAwake } from 'expo-keep-awake';
 import { useState } from 'react';
 import { Alert, Keyboard } from 'react-native';
 
@@ -53,6 +54,9 @@ export default function ActiveWorkoutScreen() {
   // nothing instead: a <Redirect> would race with the action's own navigation and could
   // replace the summary with `/`.
   const [mountedWithSession] = useState(session !== undefined);
+  // Keeps the screen on while logging on the court; released automatically when this screen
+  // unmounts (Finish, Discard, Minimize).
+  useKeepAwake();
 
   if (!session || !detail) return mountedWithSession ? null : <Redirect href="/" />;
 

@@ -1,6 +1,7 @@
 import { AppText } from '@/components/AppText';
 import { Button } from '@/components/Button';
 import { EmptyState } from '@/components/EmptyState';
+import { IconButton } from '@/components/IconButton';
 import { Screen } from '@/components/Screen';
 import { FgEvolutionCard } from '@/features/history/FgEvolutionCard';
 import {
@@ -23,9 +24,9 @@ import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 /**
- * The profile, then the stats over the history (sessions, AVG FG%, shots, time, trend), the FG%
- * evolution chart, and the latest
- * sessions by month, with "See all" opening the full History.
+ * The profile (with Settings at the top right), then the stats over the history (sessions, AVG
+ * FG%, shots, time), the FG% evolution chart, and the latest sessions by month, with "See all"
+ * opening the full History.
  */
 export default function ProfileScreen() {
   const router = useRouter();
@@ -39,8 +40,17 @@ export default function ProfileScreen() {
   const editProfile = () => router.push('/edit-profile');
 
   return (
-    <Screen title="Profile">
-      <ProfileCard profile={profile} count={items.length} onEdit={editProfile} />
+    <Screen
+      title="Profile"
+      right={
+        <IconButton
+          icon="settings"
+          accessibilityLabel="Settings"
+          onPress={() => router.push('/settings')}
+        />
+      }
+    >
+      <ProfileCard profile={profile} onEdit={editProfile} />
       {items.length === 0 ? (
         <EmptyState
           icon="history"
